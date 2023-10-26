@@ -1,0 +1,40 @@
+version: '3.7'
+services:
+  server:
+    image: rosenpass
+    networks:
+      rosenpass:
+        ipv4_address: 172.26.0.3
+        ipv6_address: fe90::3
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    command: 
+      - /bin/bash
+      - -c
+      - |
+        echo "reload sysctl"
+        sysctl -p
+        rp genkey server.rosenpass-secret
+        rp genkey client.rosenpass-secret
+        rp pubkey server.rosenpass-secret server.rosenpass-public
+        rp pubkey client.rosenpass-secret client.rosenpass-public
+        rp exchange server.rosenpass-secret dev rosenpass0 listen 172.26.0.3:9999 peer client.rosenpass-public allowed-ips fe90::/64 &
+        sleep 5
+        ip a add fe90::3/64 dev rosenpass0
+        sleep 100000
+    volumes:
+      - ./config/sysctl.conf:/etc/sysctl.conf
+networks:
+  rosenpass:
+    driver: bridge
+    enable_ipv6: true
+    driver_opts:
+      com.docker.network.enable_ipv6: "true"
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.26.0.0/16
+        gateway: 172.26.0.1
+      - subnet: fe90::/64
+        gateway: fe90::1
