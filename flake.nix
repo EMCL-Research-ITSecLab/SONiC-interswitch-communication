@@ -12,7 +12,15 @@
       dockerImages.rosenpass = pkgs.dockerTools.buildLayeredImage {
         name = "rosenpass";
         tag = "latest";
-        contents = [ rosenpass.packages.x86_64-linux.rosenpass pkgs.coreutils-full pkgs.bash pkgs.gnugrep pkgs.iproute2];
+        contents = [ 
+          rosenpass.packages.x86_64-linux.rosenpass
+          pkgs.coreutils-full
+          pkgs.bash 
+          pkgs.gnugrep 
+          pkgs.iproute2 
+          pkgs.procps
+          ];
+        
         config = {
           Cmd = [ "${pkgs.bash}/bin/bash" ];
         };
