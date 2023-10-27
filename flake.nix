@@ -19,6 +19,7 @@
           pkgs.gnugrep 
           pkgs.iproute2 
           pkgs.procps
+          pkgs.wireguard-tools
           ];
         
         config = {
