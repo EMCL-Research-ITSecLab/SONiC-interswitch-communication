@@ -17,6 +17,11 @@ The following packages are included by using Nix:
 | pkgs.iproute2                                  | A collection of utilities for Linux networking.                     |  ip command is necessary to create network devices for rosenpass and wireguard                    |
 | pkgs.procps                       | Package to include sysctl       | sysctl is needed to be able to configure ipv6 correctly                 |
 | pkgs.wireguard-tools                        | Package to include wireguard          | Is needed to establish a VPN connection between servers                 |
+| pkgs.inetutils                      | Package to include ping and other network tools       | Is needed to test the connection between the servers                 |
+| pkgs.iana-etc                  | Package to include protocols for communication      | Needed to include /etc/protocols in the image to be able to communicate e.g. via imcp for a ping                 |
+
+
+
 
 #### Flake
 Since rosenpass is relying on the experimental functionality of "flakes", this project also harnesses its capabilities. Flake allows even more reproducibility than normal Nix. 
@@ -45,7 +50,6 @@ docker compose up
 
 ### Next-steps
 
-- minimal connection test between two local clients by using docker compose
-- include wireguard and observe if integration with rosenpass works
+- write test for image 
 - Begin (simple) pipeline setup for building the docker image
 - Upload the docker image from the pipeline to ghcr

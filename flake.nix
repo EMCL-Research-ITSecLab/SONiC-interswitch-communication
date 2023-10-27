@@ -20,6 +20,8 @@
           pkgs.iproute2 
           pkgs.procps
           pkgs.wireguard-tools
+          pkgs.inetutils
+          pkgs.iana-etc
           ];
         
         config = {
