@@ -51,5 +51,6 @@ docker compose up
 ### Next-steps
 
 - write test for image 
+  - correct tests --> at the moment the execution succeeds but the result is network not reachable --> investigate, why?
 - Begin (simple) pipeline setup for building the docker image
 - Upload the docker image from the pipeline to ghcr
