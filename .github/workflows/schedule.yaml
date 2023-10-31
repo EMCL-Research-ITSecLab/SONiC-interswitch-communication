@@ -50,9 +50,8 @@ jobs:
 
     - name: Trigger build workflow
       run: |
-        # TODO: Change ref to main after finishing branch
         curl -X POST \
         -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
         -H "Accept: application/vnd.github.v3+json" \
         https://api.github.com/repos/${{ github.repository }}/actions/workflows/build.yml/dispatches \
-        -d '{"ref":"feature/minimal-rp-wg-setup","inputs":{"version":"$RELEASE"}}'
+        -d '{"ref":"develop","inputs":{"version":"$RELEASE"}}'
