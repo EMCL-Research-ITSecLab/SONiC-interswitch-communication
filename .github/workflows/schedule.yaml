@@ -1,0 +1,58 @@
+name: Schedule build
+
+on:
+  schedule:
+    # Run every 3 hours
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+    
+jobs:
+  check_releases:
+    runs-on: ubuntu-latest
+    steps:
+    - name: check for new release
+      run: |
+        echo "Retrieve rosenpass release versions"
+        for RELEASE_NR in 0 1 .. 10
+        do
+          RELEASE=$(curl -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
+          echo "$RELEASE" >> $GITHUB_ENV
+          if [[ "${RELEASE}" == *"whitepaper"* ]]; then
+            echo "Release $RELEASE_NR is whitepaper release, progressing ..."
+          elif [ -z "${RELEASE}" ] || [ "${RELEASE}" == "null" ]; then
+            echo "Release $RELEASE_NR could not be retrieved, progressing ..."
+          else
+            echo "found latests release in Release Nr: $RELEASE_NR, with version $RELEASE"
+            break
+          fi
+        done
+
+        echo "Checking the latest version on GHCR"
+        #TODO: CHECK íf the URL is correct and jq works
+        LATEST_PUSHED_RELEASE=$(curl -H "Authorization: Bearer ${{secrets.ACCESS_TOKEN}}" https://ghcr.io/v2/EMCL-Research-ITSecLab/rosenpass-docker/tags/list | jq -r .[0].version)
+        echo "$LATEST_PUSHED_RELEASE" >> $GITHUB_ENV
+        if [ -z "${LATEST_PUSHED_RELEASE}" ] || [ "${LATEST_PUSHED_RELEASE}" == "null" ]; then
+          echo "No release found"
+        else
+          echo "found latests release with version $LATEST_PUSHED_RELEASE"
+        fi
+
+        echo "comparing the latest official release with the latest release published by us"
+        if [ "${RELEASE}" == "${LATEST_PUSHED_RELEASE}" ]; then
+         echo "Version $RELEASE already pushed, exiting..."
+         exit 0 
+        else
+          echo "New version: $RELEASE"
+          echo "Latest version built: $LATEST_PUSHED_RELEASE"
+          echo "building new version"
+        fi
+
+
+    - name: Trigger build workflow
+      run: |
+        # TODO: Change ref to main after finishing branch
+        curl -X POST \
+        -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        https://api.github.com/repos/${{ github.repository }}/actions/workflows/build.yml/dispatches \
+        -d '{"ref":"feature/minimal-rp-wg-setup","inputs":{"version":"$RELEASE"}}'
