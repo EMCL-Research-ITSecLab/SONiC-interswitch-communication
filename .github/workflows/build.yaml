@@ -1,0 +1,20 @@
+name: Build 
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The latest version of rosenpass to build from'
+        required: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reset input vars
+        run: |
+          VERSION="${{ github.event.inputs.some_input }}"
+          echo "$VERSION" >> $GITHUB_ENV
+      - name: TEST
+        run: |
+          echo "we should build version ${{ github.event.inputs.some_input }}""
