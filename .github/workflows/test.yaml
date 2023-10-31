@@ -17,10 +17,20 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Cache Nix Store
+      id: cache-nix
+      uses: actions/cache@v2
+      with:
+        path: /nix/store
+        key: nix-${{ hashFiles('**/flake.lock') }} 
+        # ensure that if a cache miss occurs on the primary key, any previous cache starting with nix- will be used.
+        restore-keys: |
+          nix-
+
     - name: Install Nix
+      if: steps.cache-nix.outputs.cache-hit != 'true' # Only install Nix if cache wasn't hit
       uses: cachix/install-nix-action@v13
       with:
-        # Enable experimental features for flakes
         extra_nix_config: |
           experimental-features = nix-command flakes
   
@@ -28,7 +38,9 @@ jobs:
       run: nix build .
 
     - name: Save docker image as a tarball
-      run: docker save -o image.tar $(docker load < result)
+      run: |
+        docker load < result
+        docker save -o image.tar rosenpass
 
     - name: Upload docker image
       uses: actions/upload-artifact@v2
