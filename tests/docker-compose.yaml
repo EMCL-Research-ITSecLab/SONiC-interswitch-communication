@@ -59,6 +59,12 @@ services:
     volumes:
       - ./config/sysctl.conf:/etc/sysctl.conf
       - key-directory:/keys
+    healthcheck:
+      test: ["CMD", "ping6", "-c", "4", "fe90::3%rosenpass0"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 networks:
   rosenpass:
     driver: bridge

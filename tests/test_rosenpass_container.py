@@ -1,13 +1,10 @@
 import subprocess
 import docker
-import time
-import os
 
 
 def setup_module(module):
-    subprocess.run(["docker-compose", "up", "-d"], capture_output=True, text=True)
-    # ensure that the containers are up and running
-    time.sleep(25)
+    # start the containers; Healthcheck in compose file ensures that the containers are ready
+    subprocess.run(["docker-compose", "up", "--wait"], capture_output=True, text=True)
 
 
 def teardown_module(module):

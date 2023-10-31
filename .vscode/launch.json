@@ -21,7 +21,6 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "python": "/home/max/venv/practical/bin/python",
-            "cwd": "${fileDirname}",
             "args": ["-s"]
         }
     ]
