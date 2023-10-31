@@ -13,8 +13,8 @@ jobs:
     steps:
       - name: Reset input vars
         run: |
-          VERSION="${{ github.event.inputs.some_input }}"
+          VERSION="${{ github.event.inputs.version }}"
           echo "$VERSION" >> $GITHUB_ENV
       - name: TEST
         run: |
-          echo "we should build version ${{ github.event.inputs.some_input }}""
+          echo "we should build version ${{ github.event.inputs.version }}""
