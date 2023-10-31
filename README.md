@@ -73,7 +73,7 @@ As container runtime environment, docker is used as the defacto standard solutio
 
 In order to be able to setup rosenpass correctly in docker containers, a few things need to be considered:
 - In order to prevent permission and RETNETLINK errors, the container needs:
-  - root priviledges 
+  - root privileges 
   - the NET_ADMIN capability
   - an ipv6 address 
   - sysctl options enabled to allow ipv6
@@ -82,4 +82,8 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
 ### Next-steps
 
 - Begin (simple) pipeline setup for building the docker image
-- Upload the docker image from the pipeline to ghcr
+  - Test part not complete --> error when starting ocker containers with network and container not found ?
+  - rename build to release.yaml
+  - create build.yaml and integrate into test.yaml and release.yaml
+  - renmae test.yaml to ci.yaml
+  - Upload image to dockerhub --> only on main branch on develop do upload as snapshot
