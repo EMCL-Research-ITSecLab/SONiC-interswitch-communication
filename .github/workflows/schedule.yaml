@@ -16,7 +16,6 @@ jobs:
         for RELEASE_NR in 0 1 .. 10
         do
           RELEASE=$(curl -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
-          echo "$RELEASE" >> $GITHUB_ENV
           if [[ "${RELEASE}" == *"whitepaper"* ]]; then
             echo "Release $RELEASE_NR is whitepaper release, progressing ..."
           elif [ -z "${RELEASE}" ] || [ "${RELEASE}" == "null" ]; then
@@ -26,6 +25,7 @@ jobs:
             break
           fi
         done
+        echo "$RELEASE" >> $GITHUB_ENV
 
         echo "Checking the latest version on GHCR"
 
