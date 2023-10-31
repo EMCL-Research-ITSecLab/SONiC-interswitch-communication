@@ -25,7 +25,7 @@ jobs:
             break
           fi
         done
-        echo "$RELEASE" >> $GITHUB_ENV
+        echo "RELEASE=$RELEASE" >> $GITHUB_ENV
 
         echo "Checking the latest version on GHCR"
 
@@ -45,7 +45,7 @@ jobs:
             echo "Unexpected HTTP status code: $status_code"
             exit 1
         fi
-        echo "$LATEST_PUSHED_RELEASE" >> $GITHUB_ENV
+        echo "LATEST_PUSHED_RELEASE=$LATEST_PUSHED_RELEASE" >> $GITHUB_ENV
 
         echo "comparing the latest official release with the latest release published by us"
         if [ "${RELEASE}" == "${LATEST_PUSHED_RELEASE}" ]; then
