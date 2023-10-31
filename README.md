@@ -1,6 +1,46 @@
 # rosenpass-docker
 Rosenpass Docker Implementation
 
+
+## Setup
+
+In order to build and start the containers in a local environment, simply run from the root of the project:
+
+```
+nix build . 
+docker load < result
+cd tests
+docker compose up 
+```
+
+This spins up 2 docker containers with the minimal rosenpass image, which are connected via a bridge network of docker.
+
+To stop and cleanup, run:
+
+```
+docker compose down
+docker compose rm -f
+docker network rm tests_rosenpass
+```
+
+Please note, if you don't remove the network manually after manually spinning up the containers, you will run into an error next time you try to recreate the docker containers, as the IP adresses are already used. 
+
+### Manual Tests
+To manually test the containers, log into the client container and run: 
+```ping6 fe90::3%rosenpass0```
+This will try to ping the server container via the rosenpass interface.
+On the server container you can run 
+```watch -n 0.2 'wg show all; wg show all preshared-keys'```
+To see, that a peer has been connected. If you wait 2 minutes, you will also see, that the PSK will be replaced by rosenpass.
+ 
+### Automated Tests
+
+The above test is also automated via pytest. To execute it, install the dependencies first via
+```pip install -r tests/requirements.txt```
+Then execute the tests by switching into the tests directory and run
+```pytest -s```
+
+
 ## Tools used 
 
 ###  Nix 
@@ -38,15 +78,6 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
   - an ipv6 address 
   - sysctl options enabled to allow ipv6
 
-### Setup
-
-In order to manually build the docker container for rosenpass, use:
-
-```
-nix build . 
-docker load < result
-docker compose up 
-```
 
 ### Next-steps
 
