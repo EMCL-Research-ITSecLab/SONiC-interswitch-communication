@@ -1,19 +1,42 @@
-name: Build 
+name: Build the docker image
 
-on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'The latest version of rosenpass to build from'
-        required: true
+on: 
+    workflow_call:
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v2
 
-    steps:
-      - name: Reset input vars
-        run: |
-          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-      - name: TEST
-        run: |
-          echo "we should build version ${{ github.event.inputs.version }}"
+            - name: Cache Nix Store
+              id: cache-nix
+              uses: actions/cache@v2
+              with:
+                path: /nix/store
+                key: nix-${{ hashFiles('**/flake.lock') }} 
+                # ensure that if a cache miss occurs on the primary key, any previous cache starting with nix- will be used.
+                restore-keys: |
+                    nix-
+
+            - name: Install Nix
+              if: steps.cache-nix.outputs.cache-hit != 'true' # Only install Nix if cache wasn't hit
+              uses: cachix/install-nix-action@v13
+              with:
+                extra_nix_config: |
+                    experimental-features = nix-command flakes
+    
+            - name: Build flake
+              run: nix build .
+
+            - name: Save docker image as a tarball
+              run: |
+                docker load < result
+                docker save -o image.tar rosenpass
+
+            - name: Upload docker image
+              uses: actions/upload-artifact@v2
+              with:
+                name: rosenpass
+                path: image.tar

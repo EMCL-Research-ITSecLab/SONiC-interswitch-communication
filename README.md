@@ -83,7 +83,4 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
 
 - Begin (simple) pipeline setup for building the docker image
   - Test part not complete --> error when starting ocker containers with network and container not found ?
-  - rename build to release.yaml
-  - create build.yaml and integrate into test.yaml and release.yaml
-  - renmae test.yaml to ci.yaml
   - Upload image to dockerhub --> only on main branch on develop do upload as snapshot

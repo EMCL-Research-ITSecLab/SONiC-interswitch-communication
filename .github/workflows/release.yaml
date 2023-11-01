@@ -1,0 +1,31 @@
+name: Release Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The latest version of rosenpass to build from'
+        required: true
+jobs:
+  build-image:
+    uses: ./.github/workflows/build.yaml
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build-image
+
+    steps:
+      - name: Reset input vars
+        run: |
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+      - name: TEST
+        run: |
+          echo "we should build version ${{ github.event.inputs.version }}"
+
+      - name: Publish SNAPSHOT
+        if: contains(github.ref, 'develop')
+        run: echo "SNAPSHOT"
+
+      - name: publish release Version
+        if: contains(github.ref, 'main')
+        run: echo "RELEASE"
