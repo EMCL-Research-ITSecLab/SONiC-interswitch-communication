@@ -18,9 +18,13 @@ jobs:
                 restore-keys: |
                   nix-store-${{ runner.os }}-
             
-            - name: Adjust permissions for caching
+            - name: Adjust permissions for using
               run: |
-                sudo chown -R $USER /nix/store
+                if [ -d "/nix/store" ]; then
+                sudo chown -R root /nix/store
+                else
+                  echo "/nix/store directory does not exist. Skipping permission adjustment."
+                fi
 
             - name: Install Nix
               if: steps.cache-nix-store.outputs.cache-hit != 'true'
@@ -44,6 +48,6 @@ jobs:
                 name: rosenpass
                 path: image.tar
 
-            - name: Reset permissions
+            - name: Set permission before caching to be able to se them next time
               run: |
-                sudo chown -R root /nix/store                
+                sudo chown -R $USER /nix/store             
