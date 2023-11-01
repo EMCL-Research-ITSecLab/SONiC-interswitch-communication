@@ -10,10 +10,15 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v2
 
-            - name: Prepare /nix/store for cache restoration
+            - name: Install Nix
+              uses: cachix/install-nix-action@v13
+              with:
+                extra_nix_config: |
+                  experimental-features = nix-command flakes
+
+            - name: Ensure the existance of /nix/store for cache restoration
               run: |
                 sudo mkdir -p /nix/store
-                sudo chown -R $USER /nix/store
 
             - name: Cache Nix Store
               uses: actions/cache@v2
@@ -22,14 +27,7 @@ jobs:
                 key: nix-store-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
                 restore-keys: |
                   nix-store-${{ runner.os }}-
-
-            - name: Install Nix
-              uses: cachix/install-nix-action@v13
-              with:
-                extra_nix_config: |
-                  experimental-features = nix-command flakes
   
-    
             - name: Build flake
               run: nix build .
 
