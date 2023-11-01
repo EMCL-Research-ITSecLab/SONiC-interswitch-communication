@@ -1,4 +1,4 @@
-name: Build the docker i
+name: Build the docker image
 
 on: 
     workflow_call:
@@ -18,10 +18,10 @@ jobs:
                 restore-keys: |
                   nix-store-${{ runner.os }}-
             
-            - name: Adjust permissions for using
+            - name: Adjust permissions for using the cached files
               run: |
                 if [ -d "/nix/store" ]; then
-                sudo chown -R root /nix/store
+                  sudo chown -R root /nix/store
                 else
                   echo "/nix/store directory does not exist. Skipping permission adjustment."
                 fi
@@ -48,6 +48,6 @@ jobs:
                 name: rosenpass
                 path: image.tar
 
-            - name: Set permission before caching to be able to se them next time
+            - name: Set permission before caching to be able to load them next time
               run: |
                 sudo chown -R $USER /nix/store             
