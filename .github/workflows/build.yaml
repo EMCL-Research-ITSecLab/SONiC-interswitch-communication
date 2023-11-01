@@ -10,18 +10,7 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v2
 
-            - name: Cache Nix Store
-              id: cache-nix
-              uses: actions/cache@v2
-              with:
-                path: /nix/store
-                key: nix-${{ hashFiles('**/flake.lock') }} 
-                # ensure that if a cache miss occurs on the primary key, any previous cache starting with nix- will be used.
-                restore-keys: |
-                    nix-
-
             - name: Install Nix
-              if: steps.cache-nix.outputs.cache-hit != 'true' # Only install Nix if cache wasn't hit
               uses: cachix/install-nix-action@v13
               with:
                 extra_nix_config: |
