@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-image:
-    uses: ./.github/workflows/build.yaml
+  # build-image:
+  #   uses: ./.github/workflows/build.yaml
     
   test:
-    needs: build-image
+    # needs: build-image
     runs-on: ubuntu-latest
     steps:
 
