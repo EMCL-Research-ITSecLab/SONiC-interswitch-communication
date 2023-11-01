@@ -7,12 +7,17 @@ LOGGER = logging.getLogger(__name__)
 
 def setup_module(module):
     # start the containers; Healthcheck in compose file ensures that the containers are ready
-    subprocess.run(["docker-compose", "up", "--wait"], capture_output=True, text=True)
+    container = subprocess.run(
+        ["docker-compose", "up", "--wait"], capture_output=True, text=True
+    )
     # Log if everything is setup correctly
     ps = subprocess.run(["docker", "ps", "-a"], capture_output=True, text=True)
     nw = subprocess.run(["docker", "network", "ls"], capture_output=True, text=True)
+    directory = subprocess.run(["pwd"], capture_output=True, text=True)
     LOGGER.info(ps.stdout)
     LOGGER.info(nw.stdout)
+    LOGGER.info(directory.stdout)
+    LOGGER.info(container.stderr)
 
 
 def teardown_module(module):
