@@ -1,4 +1,4 @@
-name: Build the docker image
+name: Build the docker i
 
 on: 
     workflow_call:
@@ -10,11 +10,25 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v2
 
+            - name: Cache Nix Store
+              uses: actions/cache@v2
+              with:
+                path: /nix/store
+                key: nix-store-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
+                restore-keys: |
+                  nix-store-${{ runner.os }}-
+            
+            - name: Adjust permissions for caching
+              run: |
+                sudo chown -R $USER /nix/store
+
             - name: Install Nix
+              if: steps.cache-nix-store.outputs.cache-hit != 'true'
               uses: cachix/install-nix-action@v13
               with:
                 extra_nix_config: |
-                    experimental-features = nix-command flakes
+                  experimental-features = nix-command flakes
+  
     
             - name: Build flake
               run: nix build .
@@ -29,3 +43,7 @@ jobs:
               with:
                 name: rosenpass
                 path: image.tar
+
+            - name: Reset permissions
+              run: |
+                sudo chown -R root /nix/store                
