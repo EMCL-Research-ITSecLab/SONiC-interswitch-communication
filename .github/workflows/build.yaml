@@ -10,6 +10,12 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v2
 
+            - name: Install Nix
+              uses: cachix/install-nix-action@v15
+              with:
+                extra_nix_config: |
+                  experimental-features = nix-command flakes
+
             - name: Ensure the existance of /nix/store for cache restoration
               run: |
                 sudo mkdir -p /nix/store
@@ -34,12 +40,6 @@ jobs:
                   !/nix/var/nix/gc.lock
                   !/nix/var/nix/db/big-lock
                   !/nix/var/nix/db/reserved
-  
-            - name: Install Nix
-              uses: cachix/install-nix-action@v13
-              with:
-                extra_nix_config: |
-                  experimental-features = nix-command flakes
 
             - name: Build flake
               run: nix build .
