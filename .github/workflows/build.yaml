@@ -22,17 +22,8 @@ jobs:
                 key: nix-store-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
                 restore-keys: |
                   nix-store-${{ runner.os }}-
-            
-            - name: Adjust permissions for using the cached files
-              run: |
-                if [ -d "/nix/store" ]; then
-                  sudo chown -R root /nix/store
-                else
-                  echo "/nix/store directory does not exist. Skipping permission adjustment."
-                fi
 
             - name: Install Nix
-              if: steps.cache-nix-store.outputs.cache-hit != 'true'
               uses: cachix/install-nix-action@v13
               with:
                 extra_nix_config: |
@@ -52,7 +43,3 @@ jobs:
               with:
                 name: rosenpass
                 path: image.tar
-
-            - name: Set permission before caching to be able to load them next time
-              run: |
-                sudo chown -R $USER /nix/store             
