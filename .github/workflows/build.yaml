@@ -19,6 +19,7 @@ jobs:
             - name: Ensure the existance of /nix/store for cache restoration
               run: |
                 sudo mkdir -p /nix/store
+                sudo chown -R $USER /nix/store
 
             - name: Cache Nix Store
               uses: actions/cache@v2
