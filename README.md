@@ -82,5 +82,5 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
 ### Next-steps
 
 - Begin (simple) pipeline setup for building the docker image
-  - Upload image to dockerhub --> only on main branch on develop do upload as snapshot
-  - Switch to docker for tag search
+  - Upload image to dockerhub --> credentials are missing for now
+  - Switch to dockerhub for tag search
