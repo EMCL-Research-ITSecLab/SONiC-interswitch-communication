@@ -3,7 +3,7 @@ name: Schedule build
 on:
   schedule:
     # Run every 3 hours
-    - cron: '0 */3 * * *'
+    - cron: '0 15 * * *'
   workflow_dispatch:
     
 jobs:
