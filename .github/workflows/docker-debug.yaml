@@ -1,0 +1,32 @@
+name: Debug for docker
+
+on: 
+  workflow_dispatch:
+
+jobs:   
+  test:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Set Up Python 3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - name: check docker
+      run: docker-compose --help
+
+    - name: try starting the compose file
+      run: |
+        cd tests
+        docker-compose up --wait
+    - name: check container
+      run: docker ps -a
+    - name: try again loading the compose config
+      run: |
+        docker-compose up -d
+        sleep 20
+        docker ps -a
