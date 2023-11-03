@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: check for new release
+      shell: bash
       run: |
         echo "Retrieve rosenpass release versions"
         for RELEASE_NR in 0 1 .. 10
