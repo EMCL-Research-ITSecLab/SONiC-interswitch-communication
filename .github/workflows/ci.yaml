@@ -3,7 +3,9 @@ name: Build and Test
 on: 
   pull_request:
     types: [opened]
+  workflow_call:
   workflow_dispatch:
+
 
 jobs:
   build-image:

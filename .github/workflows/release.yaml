@@ -7,12 +7,11 @@ on:
         description: 'The latest version of rosenpass to build from'
         required: true
 jobs:
-  build-image:
-    uses: ./.github/workflows/build.yaml
-
+  # build-and-test-image:
+  #   uses: ./.github/workflows/ci.yaml
   release:
     runs-on: ubuntu-latest
-    needs: build-image
+    # needs: build-and-test-image
 
     steps:
       - name: Reset input vars
@@ -24,8 +23,23 @@ jobs:
 
       - name: Publish SNAPSHOT
         if: contains(github.ref, 'develop')
-        run: echo "SNAPSHOT"
+        run: echo "PUBLISH_VERSION=$VERSION-SNAPSHOT" >> GITHUB_ENV
 
       - name: publish release Version
         if: contains(github.ref, 'main')
-        run: echo "RELEASE"
+        run: echo "PUBLISH_VERSION=$VERSION" >> GITHUB_ENV
+
+      - name: load the image
+        uses: actions/download-artifact@v2
+        with:
+          name: rosenpass
+          path: .
+        
+      - name: tag the image
+        run: docker tag rosenpass:latest rosenpass:$PUBLISH_VERSION
+
+      - name: doker login
+        run: docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_ACCESS_TOKEN}}
+        
+      - name: upload the image
+        run: docker push rosenpass:$PUBLISH_VERSION
