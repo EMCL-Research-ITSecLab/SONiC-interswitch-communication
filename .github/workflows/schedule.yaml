@@ -35,23 +35,24 @@ jobs:
                 
         # Fetch latest tags
         status_code=$(curl -s -w "%{http_code}" -o response.json -H "Authorization: bearer ${{secrets.ACCESS_TOKEN}}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$ORG_NAME/packages/container/$PACKAGE_NAME/versions")
+        ref=${{github.ref}}
         if [ "$status_code" -eq 404 ]; then
             echo "Package not found."
             LATEST_PUSHED_RELEASE=""
         elif [ "$status_code" -eq 200 ]; then
-            if [ ${{contains(github.ref, 'develop')}} ]; then
+            if [[ "$ref" == *"develop"* ]]; then
               echo "Looking for a SNAPSHOT version in the released packages"
               for RELEASE_NR in 0 1 .. 10
               do
                 LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.[$RELEASE_NR].name')
-                if [[ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"*]]; then
+                if [[ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]]; then
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Continuing ..."
                   break
                 else
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Not a SNAPSHOT, looking for SNAPSHOT release ..."
                 fi
               done
-            elif [ ${{contains(github.ref, 'main')}} ]; then
+            elif [[ "$ref" == *"main"* ]]; then
               echo "Looking for main release version"
               for RELEASE_NR in 0 1 .. 10
               do
@@ -67,10 +68,6 @@ jobs:
         else
             echo "Unexpected HTTP status code: $status_code"
             exit 1
-        fi
-        if [[ -z ${LATEST_PUSHED_RELEASE} ]]; then
-          echo "Could not find any latest version, aborting"
-          exit 2
         fi
         echo "LATEST_PUSHED_RELEASE=$LATEST_PUSHED_RELEASE" >> $GITHUB_ENV
 
