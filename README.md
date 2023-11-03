@@ -82,5 +82,4 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
 ### Next-steps
 
 - Begin (simple) pipeline setup for building the docker image
-  - Test part not complete --> error when starting ocker containers with network and container not found ?
   - Upload image to dockerhub --> only on main branch on develop do upload as snapshot
