@@ -37,7 +37,5 @@ jobs:
         pip install -r ./tests/requirements.txt
 
     - name: Run Tests
-      run: |
-        pwd
-        pytest -s
+      run: pytest -s
       working-directory: ./tests

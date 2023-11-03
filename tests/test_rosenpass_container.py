@@ -8,7 +8,7 @@ LOGGER = logging.getLogger(__name__)
 def setup_module(module):
     # start the containers; Healthcheck in compose file ensures that the containers are ready
     container = subprocess.run(
-        ["docker-compose", "up", "--wait"], capture_output=True, text=True
+        ["docker", "compose", "up", "--wait"], capture_output=True, text=True
     )
     # Log if everything is setup correctly
     ps = subprocess.run(["docker", "ps", "-a"], capture_output=True, text=True)
@@ -21,9 +21,9 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    subprocess.run(["docker-compose", "stop"])
+    subprocess.run(["docker", "compose", "stop"])
     subprocess.run(["docker", "network", "rm", "tests_rosenpass"])
-    subprocess.run(["docker-compose", "rm", "-f"])
+    subprocess.run(["docker", "compose", "rm", "-f"])
 
 
 def test_ping_from_client():
