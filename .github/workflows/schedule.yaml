@@ -40,24 +40,24 @@ jobs:
             echo "Package not found."
             LATEST_PUSHED_RELEASE=""
         elif [ "$status_code" -eq 200 ]; then
-            if [[ "$ref" == *"develop"* ]]; then
+            if [ "$ref" == *"develop"* ]; then
               echo "Looking for a SNAPSHOT version in the released packages"
               for RELEASE_NR in 0 1 .. 10
               do
                 LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.[$RELEASE_NR].name')
-                if [[ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]]; then
+                if [ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]; then
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Continuing ..."
                   break
                 else
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Not a SNAPSHOT, looking for SNAPSHOT release ..."
                 fi
               done
-            elif [[ "$ref" == *"main"* ]]; then
+            elif [ "$ref" == *"main"* ]; then
               echo "Looking for main release version"
               for RELEASE_NR in 0 1 .. 10
               do
                 LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.[$RELEASE_NR].name')
-                if [[ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"*]]; then
+                if [ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]; then
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Is a SNAPSHOT, looking for non SNAPSHOT release ..."
                 else
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Continuing ..."
