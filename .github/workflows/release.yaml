@@ -14,20 +14,18 @@ jobs:
     # needs: build-and-test-image
 
     steps:
-      - name: Reset input vars
-        run: |
-          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-
       - name: Publish SNAPSHOT
         if: contains(github.ref, 'develop')
         run: |
-          echo "PUBLISH_VERSION=${VERSION}-SNAPSHOT" >> GITHUB_ENV
+          PUBLISH_VERSION=${{ github.event.inputs.version }}-SNAPSHOT
+          echo "PUBLISH_VERSION=$PUBLISH_VERSION" >> GITHUB_ENV
           echo "SNPASHOT version: ${PUBLISH_VERSION}"
 
       - name: publish release Version
         if: contains(github.ref, 'main')
         run: |
-          echo "PUBLISH_VERSION=$VERSION" >> GITHUB_ENV
+          PUBLISH_VERSION=${{ github.event.inputs.version }}
+          echo "PUBLISH_VERSION=PUBLISH_VERSION" >> GITHUB_ENV
           echo "Main version: ${PUBLISH_VERSION}"
 
 
@@ -48,8 +46,10 @@ jobs:
           echo "Publish-version - ${PUBLISH_VERSION}"
 
       - name: tag the image
-        run: docker tag rosenpass:latest "${{secrets.DOCKER_USERNAME}}/rosenpass:${PUBLISH_VERSION}"
+        run: |
+          docker pull jenkins/jenkins
+          docker tag jenkins:latest "${{secrets.DOCKER_USERNAME}}/jenkins:${PUBLISH_VERSION}"
 
 
-      - name: push image to registry
-        run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:${PUBLISH_VERSION}"
+      # - name: push image to registry
+      #   run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:${PUBLISH_VERSION}"
