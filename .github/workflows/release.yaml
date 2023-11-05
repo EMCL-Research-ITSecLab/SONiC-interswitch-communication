@@ -7,11 +7,11 @@ on:
         description: 'The latest version of rosenpass to build from'
         required: true
 jobs:
-  # build-and-test-image:
-  #   uses: ./.github/workflows/ci.yaml
+  build-and-test-image:
+    uses: ./.github/workflows/ci.yaml
   release:
     runs-on: ubuntu-latest
-    # needs: build-and-test-image
+    needs: build-and-test-image
 
     steps:
       - name: Publish SNAPSHOT
@@ -29,11 +29,11 @@ jobs:
           echo "Main version: $PUBLISH_VERSION"
 
 
-      # - name: load the image
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: rosenpass
-      #     path: .
+      - name: load the image
+        uses: actions/download-artifact@v2
+        with:
+          name: rosenpass
+          path: .
       
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -41,15 +41,8 @@ jobs:
           username: ${{secrets.DOCKER_USERNAME}}
           password: ${{secrets.DOCKER_ACCESS_TOKEN}}
 
-      - name: debug 
-        run: |
-          echo "Publish-version - $PUBLISH_VERSION"
-
       - name: tag the image
-        run: |
-          docker pull jenkins/jenkins
-          docker tag jenkins/jenkins:latest "${{secrets.DOCKER_USERNAME}}/jenkins:$PUBLISH_VERSION"
+        run: docker tag rosenpass:latest "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
 
-
-      # - name: push image to registry
-      #   run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+      - name: push image to registry
+        run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
