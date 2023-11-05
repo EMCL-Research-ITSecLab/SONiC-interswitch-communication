@@ -48,7 +48,7 @@ jobs:
       - name: tag the image
         run: |
           docker pull jenkins/jenkins
-          docker tag jenkins:latest "${{secrets.DOCKER_USERNAME}}/jenkins:$PUBLISH_VERSION"
+          docker tag jenkins/jenkins:latest "${{secrets.DOCKER_USERNAME}}/jenkins:$PUBLISH_VERSION"
 
 
       # - name: push image to registry
