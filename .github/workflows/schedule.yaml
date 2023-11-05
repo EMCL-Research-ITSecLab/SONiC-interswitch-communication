@@ -14,10 +14,12 @@ jobs:
       shell: bash
       run: |
         echo "Retrieve rosenpass release versions"
-        for RELEASE_NR in 0 1 .. 10
+        RELEASE=$(curl -o rosenpass_releases.json -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
+        release_counts=$(cat rosenpass_releases.json | jq '. | length')
+        for RELEASE_NR in $(seq 0 $release_counts)
         do
           RELEASE=$(curl -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
-          if [[ "${RELEASE}" == *"whitepaper"* ]]; then
+          if [ "${RELEASE}" == *"whitepaper"* ]; then
             echo "Release $RELEASE_NR is whitepaper release, progressing ..."
           elif [ -z "${RELEASE}" ] || [ "${RELEASE}" == "null" ]; then
             echo "Release $RELEASE_NR could not be retrieved, progressing ..."
@@ -28,23 +30,26 @@ jobs:
         done
         echo "RELEASE=$RELEASE" >> $GITHUB_ENV
 
-        echo "Checking the latest version on GHCR"
+        echo "Checking the latest version on Dockerhub"
 
-        ORG_NAME="EMCL-Research-ITSecLab"
-        PACKAGE_NAME="rosenpass"
-                
-        # Fetch latest tags
-        status_code=$(curl -s -w "%{http_code}" -o response.json -H "Authorization: bearer ${{secrets.ACCESS_TOKEN}}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$ORG_NAME/packages/container/$PACKAGE_NAME/versions")
+        USERNAME=${{secrets.DOCKER_USERNAME}}
+        IMAGENAME=rosenpass
         ref=${{github.ref}}
+
+        # Fetch latest tags
+        status_code=$(curl -o response.json -w "%{http_code}"  -s "https://registry.hub.docker.com/v2/repositories/$USERNAME/$IMAGENAME/tags")
+        result_count=$(cat response.json | jq '.results | length')
+        echo "results: $result_count"
         if [ "$status_code" -eq 404 ]; then
             echo "Package not found."
             LATEST_PUSHED_RELEASE=""
         elif [ "$status_code" -eq 200 ]; then
             if [ "$ref" == *"develop"* ]; then
               echo "Looking for a SNAPSHOT version in the released packages"
-              for RELEASE_NR in 0 1 .. 10
+              for RELEASE_NR in $(seq 0 $result_count)
               do
-                LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.[$RELEASE_NR].name')
+
+                LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.results[$RELEASE_NR].name')
                 if [ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]; then
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Continuing ..."
                   break
@@ -54,9 +59,9 @@ jobs:
               done
             elif [ "$ref" == *"main"* ]; then
               echo "Looking for main release version"
-              for RELEASE_NR in 0 1 .. 10
+              for RELEASE_NR in $(seq 0 $result_count)
               do
-                LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.[$RELEASE_NR].name')
+                LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.results[$RELEASE_NR].name')
                 if [ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]; then
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Is a SNAPSHOT, looking for non SNAPSHOT release ..."
                 else
@@ -64,6 +69,9 @@ jobs:
                   break
                 fi
               done
+            fi
+            if [ -z $LATEST_PUSHED_RELEASE ]; then
+              echo "Found the registry repository, but could not find latest version in the tags"
             fi
         else
             echo "Unexpected HTTP status code: $status_code"
