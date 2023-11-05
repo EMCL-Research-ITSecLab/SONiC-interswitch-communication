@@ -24,7 +24,7 @@ jobs:
                 docker load < result
                 docker save -o image.tar rosenpass
 
-            - name: Upload docker image
+            - name: Save docker image in artefactory
               uses: actions/upload-artifact@v2
               with:
                 name: rosenpass
