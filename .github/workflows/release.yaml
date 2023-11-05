@@ -7,11 +7,11 @@ on:
         description: 'The latest version of rosenpass to build from'
         required: true
 jobs:
-  # build-and-test-image:
-  #   uses: ./.github/workflows/ci.yaml
+  build-and-test-image:
+    uses: ./.github/workflows/ci.yaml
   release:
     runs-on: ubuntu-latest
-    # needs: build-and-test-image
+    needs: build-and-test-image
 
     steps:
       - name: Reset input vars
