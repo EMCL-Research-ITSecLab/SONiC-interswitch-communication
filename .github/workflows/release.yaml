@@ -6,7 +6,6 @@ on:
       version:
         description: 'The latest version of rosenpass to build from'
         required: true
-        default: v0.2.0
 jobs:
   # build-and-test-image:
   #   uses: ./.github/workflows/ci.yaml
