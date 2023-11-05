@@ -18,15 +18,15 @@ jobs:
         if: contains(github.ref, 'develop')
         run: |
           PUBLISH_VERSION=${{ github.event.inputs.version }}-SNAPSHOT
-          echo "PUBLISH_VERSION=$PUBLISH_VERSION" >> GITHUB_ENV
-          echo "SNPASHOT version: ${PUBLISH_VERSION}"
+          echo PUBLISH_VERSION=$PUBLISH_VERSION >> GITHUB_ENV
+          echo "SNPASHOT version: ${{env.PUBLISH_VERSION}}"
 
       - name: publish release Version
         if: contains(github.ref, 'main')
         run: |
           PUBLISH_VERSION=${{ github.event.inputs.version }}
-          echo "PUBLISH_VERSION=PUBLISH_VERSION" >> GITHUB_ENV
-          echo "Main version: ${PUBLISH_VERSION}"
+          echo PUBLISH_VERSION=PUBLISH_VERSION >> GITHUB_ENV
+          echo "Main version: ${{env.PUBLISH_VERSION}}"
 
 
       # - name: load the image
@@ -43,13 +43,13 @@ jobs:
 
       - name: debug 
         run: |
-          echo "Publish-version - ${PUBLISH_VERSION}"
+          echo "Publish-version - ${{env.PUBLISH_VERSION}}"
 
       - name: tag the image
         run: |
           docker pull jenkins/jenkins
-          docker tag jenkins:latest "${{secrets.DOCKER_USERNAME}}/jenkins:${PUBLISH_VERSION}"
+          docker tag jenkins:latest "${{secrets.DOCKER_USERNAME}}/jenkins:${{env.PUBLISH_VERSION}}"
 
 
       # - name: push image to registry
-      #   run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:${PUBLISH_VERSION}"
+      #   run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:${{env.PUBLISH_VERSION}}"
