@@ -19,7 +19,7 @@ jobs:
         for RELEASE_NR in $(seq 0 $release_counts)
         do
           RELEASE=$(curl -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
-          if [ "${RELEASE}" == *"whitepaper"* ]; then
+          if [[ "${RELEASE}" == *"whitepaper"* ]]; then
             echo "Release $RELEASE_NR is whitepaper release, progressing ..."
           elif [ -z "${RELEASE}" ] || [ "${RELEASE}" == "null" ]; then
             echo "Release $RELEASE_NR could not be retrieved, progressing ..."
