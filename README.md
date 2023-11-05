@@ -81,6 +81,4 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
 
 ### Next-steps
 
-- Begin (simple) pipeline setup for building the docker image
-  - Upload image to dockerhub --> credentials are missing for now
-  - Switch to dockerhub for tag search
+- Try to use the image in virtual SONic switches
