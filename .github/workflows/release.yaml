@@ -21,14 +21,15 @@ jobs:
       - name: Publish SNAPSHOT
         if: contains(github.ref, 'develop')
         run: |
-          echo "SNPASHOT version: PUBLISH_VERSION=$VERSION-SNAPSHOT"
-          echo "PUBLISH_VERSION=$VERSION-SNAPSHOT" >> GITHUB_ENV
+          echo "PUBLISH_VERSION=${VERSION}-SNAPSHOT" >> GITHUB_ENV
+          echo "SNPASHOT version: ${PUBLISH_VERSION}"
 
       - name: publish release Version
         if: contains(github.ref, 'main')
         run: |
-          echo "Main version: PUBLISH_VERSION=$VERSION"
           echo "PUBLISH_VERSION=$VERSION" >> GITHUB_ENV
+          echo "Main version: ${PUBLISH_VERSION}"
+
 
       # - name: load the image
       #   uses: actions/download-artifact@v2
@@ -44,11 +45,11 @@ jobs:
 
       - name: debug 
         run: |
-          echo "Publish-version=$PUBLISH_VERSION"
+          echo "Publish-version - ${PUBLISH_VERSION}"
 
       - name: tag the image
-        run: docker tag rosenpass:latest "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+        run: docker tag rosenpass:latest "${{secrets.DOCKER_USERNAME}}/rosenpass:${PUBLISH_VERSION}"
 
 
       - name: push image to registry
-        run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+        run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:${PUBLISH_VERSION}"
