@@ -25,7 +25,7 @@ jobs:
         if: contains(github.ref, 'main')
         run: |
           PUBLISH_VERSION="${{ github.event.inputs.version }}"
-          echo "PUBLISH_VERSION=PUBLISH_VERSION" >> $GITHUB_ENV
+          echo "PUBLISH_VERSION=$PUBLISH_VERSION" >> $GITHUB_ENV
           echo "Main version: $PUBLISH_VERSION"
 
 
