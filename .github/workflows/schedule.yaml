@@ -2,7 +2,6 @@ name: Schedule build
 
 on:
   schedule:
-    # Run every 3 hours
     - cron: '0 15 * * *'
   workflow_dispatch:
     
@@ -86,10 +85,14 @@ jobs:
         else
           echo "New version: $RELEASE"
           echo "Latest version built: $LATEST_PUSHED_RELEASE"
-          echo "Trigger build for new version"
-          curl -X POST \
-          -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/${{ github.repository }}/actions/workflows/release.yaml/dispatches \
-          -d "{\"ref\":\"develop\",\"inputs\":{\"version\":\"$RELEASE\"}}"
+          echo "Trigger build for new version and each branch"
+          for branch in develop main
+          do
+            echo "triggering for branch $branch"
+            curl -X POST \
+            -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/release.yaml/dispatches \
+            -d "{\"ref\":\"$branch\",\"inputs\":{\"version\":\"$RELEASE\"}}"
+          done
         fi
