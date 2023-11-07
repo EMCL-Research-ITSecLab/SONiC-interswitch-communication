@@ -15,7 +15,7 @@ jobs:
         echo "Retrieve rosenpass release versions"
         RELEASE=$(curl -o rosenpass_releases.json -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
         release_counts=$(cat rosenpass_releases.json | jq '. | length')
-        for RELEASE_NR in $(seq 0 $release_counts)
+        for RELEASE_NR in $(seq 0 $(($release_counts - 1)))
         do
           RELEASE=$(curl -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
           if [[ "${RELEASE}" == *"whitepaper"* ]]; then
@@ -31,9 +31,9 @@ jobs:
 
         echo "Checking the latest version on Dockerhub"
 
-        USERNAME=${{secrets.DOCKER_USERNAME}}
+        USERNAME=stefan96
         IMAGENAME=rosenpass
-        ref=${{github.ref}}
+        ref=develop
 
         # Fetch latest tags
         status_code=$(curl -o response.json -w "%{http_code}"  -s "https://registry.hub.docker.com/v2/repositories/$USERNAME/$IMAGENAME/tags")
@@ -43,9 +43,9 @@ jobs:
             echo "Package not found."
             LATEST_PUSHED_RELEASE=""
         elif [ "$status_code" -eq 200 ]; then
-            if [ "$ref" == *"develop"* ]; then
+            if [[ "$ref" == *"develop"* ]]; then
               echo "Looking for a SNAPSHOT version in the released packages"
-              for RELEASE_NR in $(seq 0 $result_count)
+              for RELEASE_NR in $(seq 0 $(($result_count - 1)))
               do
 
                 LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.results[$RELEASE_NR].name')
@@ -56,9 +56,9 @@ jobs:
                   echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Not a SNAPSHOT, looking for SNAPSHOT release ..."
                 fi
               done
-            elif [ "$ref" == *"main"* ]; then
+            elif [[ "$ref" == *"main"* ]]; then
               echo "Looking for main release version"
-              for RELEASE_NR in $(seq 0 $result_count)
+              for RELEASE_NR in $(seq 0 $(($result_count - 1)))
               do
                 LATEST_PUSHED_RELEASE=$(cat response.json | jq -r '.results[$RELEASE_NR].name')
                 if [ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]; then
@@ -79,7 +79,7 @@ jobs:
         echo "LATEST_PUSHED_RELEASE=$LATEST_PUSHED_RELEASE" >> $GITHUB_ENV
 
         echo "comparing the latest official release with the latest release published by us"
-        if [ "${RELEASE}" == "${LATEST_PUSHED_RELEASE}" ]; then
+        if [[ "${RELEASE}" == "${LATEST_PUSHED_RELEASE}" ]]; then
          echo "Version $RELEASE already pushed, exiting..."
          exit 0 
         else
