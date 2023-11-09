@@ -10,7 +10,7 @@ In order to build and start the containers in a local environment, simply run fr
 nix build . 
 docker load < result
 cd tests
-docker compose up 
+docker compose up --wait
 ```
 
 This spins up 2 docker containers with the minimal rosenpass image, which are connected via a bridge network of docker.
