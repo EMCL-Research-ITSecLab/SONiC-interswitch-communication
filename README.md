@@ -19,11 +19,7 @@ To stop and cleanup, run:
 
 ```
 docker compose down
-docker compose rm -f
-docker network rm tests_rosenpass
 ```
-
-Please note, if you don't remove the network manually after manually spinning up the containers, you will run into an error next time you try to recreate the docker containers, as the IP adresses are already used. 
 
 ### Manual Tests
 To manually test the containers, log into the client container and run: 
