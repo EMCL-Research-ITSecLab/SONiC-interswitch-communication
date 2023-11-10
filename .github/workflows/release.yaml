@@ -14,6 +14,9 @@ jobs:
     needs: build-and-test-image
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Publish SNAPSHOT
         if: contains(github.ref, 'develop')
         run: |
@@ -41,11 +44,23 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{secrets.DOCKER_USERNAME}}
-          password: ${{secrets.DOCKER_ACCESS_TOKEN}}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
       - name: tag the image
-        run: docker tag rosenpass:latest "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+        run: |
+          echo "IMAGE_NAME=${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION" >> $GITHUB_ENV
+          # docker tag rosenpass:latest ${{ env.IMAGE_NAME }}
+
 
       - name: push image to registry
         run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+
+      - name: Add description to dockerhub
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          repository: ${{ secrets.DOCKER_USERNAME }}/rosenpass
+          short-description: Image to run rosenpass with wireguard
+          readme-filepath: ./README.image.md
