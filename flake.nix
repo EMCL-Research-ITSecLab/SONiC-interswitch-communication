@@ -25,7 +25,30 @@
           ];
         
         config = {
-          Cmd = [ "${pkgs.bash}/bin/bash" ];
+          Cmd = [
+            "${pkgs.bash}/bin/bash" "-c"
+            ''
+              ${pkgs.coreutils-full}/bin/echo "generate public and private keys";
+              ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp genkey rosenpass-secret;
+              ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp pubkey rosenpass-secret rosenpass-public;
+
+              if [ $CLIENT == "True" ]; 
+              then 
+                echo "Client mode enabled...";
+                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange rosenpass-secret dev rosenpass0 peer $SERVER_PUBKEY_DIR endpoint $SERVER_IPV4 allowed-ips $ALLOWED_IPV6_IPS &;
+                sleep 5;
+                ip a add $CLIENT_IPV6 dev rosenpass0;
+
+              elif [ $SERVER == "True" ];
+              then
+                echo "Server mode enabled...";
+                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange rosenpass-secret dev rosenpass0 listen $SERVER_IPV4_LISTEN_ADDR peer $CLIENT_PUKEY_DIR allowed-ips $ALLOWED_IPV6_IPS &;
+                sleep 5;
+                ip a add $SERVER_IPV6 dev rosenpass0;
+
+              fi;
+            ''
+          ];
         };
       };
 
@@ -34,3 +57,13 @@
     packages.x86_64-linux.default = self.dockerImages.rosenpass;
   };
 }
+
+        
+# SERVER_PUBKEY_DIR=/server-pub-keys/rosenpass-public
+# SERVER_IPV4=172.26.0.3:9999
+# ALLOWED_IPV6_IPS=fe90::/64
+# CLIENT_IPV6=fe90::4/64
+
+# SERVER_IPV4_LISTEN_ADDR=172.26.0.3:9999
+# CLIENT_PUKEY_DIR=/client-keys/rosenpass-public
+# SERVER_IPV6=fe90::3/64
