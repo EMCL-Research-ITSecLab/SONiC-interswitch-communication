@@ -14,6 +14,7 @@
         tag = "latest";
         contents = [ 
           rosenpass.packages.x86_64-linux.rosenpass
+          pkgs.iputils
           pkgs.coreutils-full
           pkgs.bash 
           pkgs.gnugrep 
@@ -32,20 +33,27 @@
               ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp genkey rosenpass-secret;
               ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp pubkey rosenpass-secret rosenpass-public;
 
-              if [ $CLIENT == "True" ]; 
+              if [ "$MODE" == "client" ]; 
               then 
                 echo "Client mode enabled...";
-                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange rosenpass-secret dev rosenpass0 peer $SERVER_PUBKEY_DIR endpoint $SERVER_IPV4 allowed-ips $ALLOWED_IPV6_IPS &;
-                sleep 5;
-                ip a add $CLIENT_IPV6 dev rosenpass0;
+                # ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange rosenpass-secret dev rosenpass0 peer $SERVER_PUBKEY_DIR endpoint $SERVER_IPV4 allowed-ips $ALLOWED_IPV6_IPS &;
+                # sleep 5;
+                # ip a add $CLIENT_IPV6 dev rosenpass0;
 
-              elif [ $SERVER == "True" ];
+              elif [ "$MODE" == "server" ];
               then
                 echo "Server mode enabled...";
-                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange rosenpass-secret dev rosenpass0 listen $SERVER_IPV4_LISTEN_ADDR peer $CLIENT_PUKEY_DIR allowed-ips $ALLOWED_IPV6_IPS &;
-                sleep 5;
-                ip a add $SERVER_IPV6 dev rosenpass0;
+                # ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange rosenpass-secret dev rosenpass0 listen $SERVER_IPV4_LISTEN_ADDR peer $CLIENT_PUKEY_DIR allowed-ips $ALLOWED_IPV6_IPS &;
+                # sleep 5;
+                # ip a add $SERVER_IPV6 dev rosenpass0;
 
+              elif [[ "$MODE" == "standalone" || -z $MODE ]];
+              then
+                echo "Standalone mode enabled...";
+                echo "skipping setup ...";
+              else
+                echo "Specified an invalid mode (MODE=$MODE)";
+                exit 1;
               fi;
             ''
           ];

@@ -77,4 +77,6 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
 
 ### Next-steps
 
-- Try to use the image in virtual SONic switches
+- check with rosenpass dev for ip4 support
+- exchange sleep for correct command in docker compose
+- elaborate client and server mode when answer for ipv4 topic
