@@ -21,8 +21,9 @@
           pkgs.iproute2 
           pkgs.procps
           pkgs.wireguard-tools
-          pkgs.inetutils
           pkgs.iana-etc
+          pkgs.iptables
+          pkgs.tcpdump
           ];
         
         config = {

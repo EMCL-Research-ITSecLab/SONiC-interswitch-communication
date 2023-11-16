@@ -5,7 +5,7 @@ services:
     networks:
       rosenpass:
         ipv4_address: 172.26.0.3
-        ipv6_address: fe90::3
+        # ipv6_address: fe90::3
     cap_add:
       - NET_ADMIN
     privileged: true
@@ -13,8 +13,8 @@ services:
       - /bin/bash
       - -c
       - |
-        echo "reload sysctl"
-        sysctl -p
+        # echo "reload sysctl"
+        # sysctl -p
         echo "generate server keys"
         rp genkey server.rosenpass-secret
         rp pubkey server.rosenpass-secret server.rosenpass-public
@@ -24,7 +24,10 @@ services:
         sleep 5 
         rp exchange server.rosenpass-secret dev rosenpass0 listen 172.26.0.3:9999 peer /keys/client.rosenpass-public allowed-ips 172.26.0.0/16 &
         sleep 5
-        ip a add 172.27.0.3/32 dev rosenpass0
+        ip a add 172.26.0.3/16 dev rosenpass0
+        sleep 5
+        sysctl -w net.ipv4.conf.all.rp_filter=0
+        sysctl -w net.ipv4.conf.rosenpass0.rp_filter=0
         tail -f /dev/null
     volumes:
       - ./config/sysctl.conf:/etc/sysctl.conf
@@ -35,7 +38,7 @@ services:
     networks:
       rosenpass:
         ipv4_address: 172.26.0.4
-        ipv6_address: fe90::4
+        # ipv6_address: fe90::4
     cap_add:
       - NET_ADMIN
     privileged: true
@@ -43,8 +46,8 @@ services:
       - /bin/bash
       - -c
       - |
-        echo "reload sysctl"
-        sysctl -p
+        # echo "reload sysctl"
+        # sysctl -p
         echo "generate client keys"
         rp genkey client.rosenpass-secret
         rp pubkey client.rosenpass-secret client.rosenpass-public
@@ -54,23 +57,26 @@ services:
         sleep 5 
         rp exchange client.rosenpass-secret dev rosenpass0 peer /keys/server.rosenpass-public endpoint 172.26.0.3:9999 allowed-ips 172.26.0.0/16 &
         sleep 5
-        ip a add 172.27.0.4/32 dev rosenpass0
+        ip a add 172.26.0.4/16 dev rosenpass0
+        sleep 5
+        sysctl -w net.ipv4.conf.all.rp_filter=0
+        sysctl -w net.ipv4.conf.rosenpass0.rp_filter=0
         tail -f /dev/null
     volumes:
       - ./config/sysctl.conf:/etc/sysctl.conf
       - key-directory:/keys
-    healthcheck:
-      test: ["CMD", "ping", "-c", "4", "-I", "rosenpass0", "172.26.0.3"]
-      interval: 20s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+    # healthcheck:
+    #   test: ["CMD", "ping", "-c", "4", "-I", "rosenpass0", "172.26.0.3"]
+    #   interval: 20s
+    #   timeout: 5s
+    #   retries: 10
+    #   start_period: 10s
 networks:
   rosenpass:
     driver: bridge
     enable_ipv6: false
     driver_opts:
-      com.docker.network.enable_ipv6: "true"
+      com.docker.network.enable_ipv6: "false"
     ipam:
       driver: default
       config:
