@@ -120,4 +120,13 @@ bash-5.2# ip addr
        valid_lft forever preferred_lft forever
     inet6 fe90::4/64 scope link nodad 
        valid_lft forever preferred_lft forever
-bash-5.2# 
+bash-5.2#
+
+
+
+
+
+traffic kommt auf rosenpass0 an
+kein routing problem, eth0 ist pingable
+versuch zweites netzwerk mit ipv4 einbauen und versuchen zwei netzerke für listening und interface zu verwenden
+support abwarten
