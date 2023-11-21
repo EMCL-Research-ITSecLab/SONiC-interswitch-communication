@@ -23,7 +23,9 @@ docker compose down
 
 ### Manual Tests
 To manually test the containers, log into the client container and run: 
-```ping6 fe90::3%rosenpass0```
+```ping -6 -I rosenpass0 fe70::3``` (ipv6 version)
+```ping -I rosenpass0 172.27.0.3``` (ipv4 version)
+
 This will try to ping the server container via the rosenpass interface.
 On the server container you can run 
 ```watch -n 0.2 'wg show all; wg show all preshared-keys'```
@@ -55,11 +57,12 @@ The following packages are included by using Nix:
 | `pkgs.wireguard-tools`                           | Package to include wireguard                                        | Is needed to establish a VPN connection between servers | False |
 | `pkgs.iputils`                                   | Package to include ping and other network tools                     | Is needed to test the connection between the servers | False |
 | `pkgs.bash`                                      | Bash is the GNU Project's shell—the Bourne Again SHell. This is an sh-compatible shell that incorporates useful features from the Korn shell (ksh) and C shell (csh). | Bash to be able to debug and login to the container via cli | False |
+| `pkgs.tcpdump`                                      | tcpdump utility to watch network traffic | Really useful to include for debugging purposes  | False |
 
 
 #### Package size
 Since it is not possible to retrieve the package sizes from an official source, it was tested, what size a minimum image will have.
-By tests, a plain Nix image will have roughly 1 MB of Space occupied. To have only the rosenpass tool included (which is not functional on its own), 67MB of space are required. All packages that are strictly required for rosenpass to work, consume 94MB of space (Wireguard is not included). When including Wireguard as well, the image takes up to 131MB. The image with all the packages listed above, needs 131MB as well. 
+By tests, a plain Nix image will have roughly 1 MB of Space occupied. To have only the rosenpass tool included (which is not functional on its own), 67MB of space are required. All packages that are strictly required for rosenpass to work, consume 94MB of space (Wireguard is not included). When including Wireguard as well, the image takes up to 132MB. The image with all the packages listed above, needs 132MB as well. 
 These results were obtained by using each combination of packages as mentioned above with a plain image and observing the size properties of the results in the nix path. via ``` nix path-info -Sh ./result ``` 
 
 
@@ -76,57 +79,11 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
 - In order to prevent permission and RETNETLINK errors, the container needs:
   - root privileges 
   - the NET_ADMIN capability
-  - an ipv6 address 
+- Additionally for ipv6 compatibility the container need: 
   - sysctl options enabled to allow ipv6
 
 
 ### Next-steps
 
-- check with rosenpass dev for ip4 support
-- exchange sleep for correct command in docker compose
 - elaborate client and server mode when answer for ipv4 topic
-- build the image if only the flake lock is different
-
-andere docker networking einstellungen --> andere subnets um nicht in konflikt zu geraten?
-netwerk technishc komme ich hin aber nicht mit rosenpass
-
-
-
-max@LAPTOP-D6IC8GJA:~/Studium-HD/practical/rosenpass-docker/tests$ docker exec -it tests-client-1 /bin/bash
-bash-5.2# ip addr
-
-2: rosenpass0: <POINTOPOINT,NOARP,UP,LOWER_UP> mtu 1420 qdisc noqueue state UNKNOWN group default qlen 1000
-    link/none 
-    inet 172.26.0.4/16 scope global rosenpass0
-       valid_lft forever preferred_lft forever
-25: eth0@if26: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
-    link/ether 02:42:ac:1a:00:04 brd ff:ff:ff:ff:ff:ff link-netnsid 0
-    inet 172.26.0.4/16 brd 172.26.255.255 scope global eth0
-       valid_lft forever preferred_lft forever
-    inet6 fe80::42:acff:fe1a:4/64 scope link 
-       valid_lft forever preferred_lft forever
-
-
-
-2: rosenpass0: <POINTOPOINT,NOARP,UP,LOWER_UP> mtu 1420 qdisc noqueue state UNKNOWN group default qlen 1000
-    link/none 
-    inet6 fe90::4/64 scope link 
-       valid_lft forever preferred_lft forever
-35: eth0@if36: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
-    link/ether 02:42:ac:1a:00:04 brd ff:ff:ff:ff:ff:ff link-netnsid 0
-    inet 172.26.0.4/16 brd 172.26.255.255 scope global eth0
-       valid_lft forever preferred_lft forever
-    inet6 fe80::42:acff:fe1a:4/64 scope link 
-       valid_lft forever preferred_lft forever
-    inet6 fe90::4/64 scope link nodad 
-       valid_lft forever preferred_lft forever
-bash-5.2#
-
-
-
-
-
-traffic kommt auf rosenpass0 an
-kein routing problem, eth0 ist pingable
-versuch zweites netzwerk mit ipv4 einbauen und versuchen zwei netzerke für listening und interface zu verwenden
-support abwarten
+- build the image if only the flake lock is different to support builds that have new packages included too
