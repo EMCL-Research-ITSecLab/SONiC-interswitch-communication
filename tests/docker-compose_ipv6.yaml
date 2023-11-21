@@ -22,10 +22,9 @@ services:
         cp -r /server.rosenpass-public /keys
         echo "wait 5 seconds for the keys to be available"
         sleep 5 
-        rp exchange server.rosenpass-secret dev rosenpass0 listen 172.26.0.3:9999 peer /keys/client.rosenpass-public allowed-ips 172.27.0.4 &
+        rp exchange server.rosenpass-secret dev rosenpass0 listen 172.26.0.3:9999 peer /keys/client.rosenpass-public allowed-ips fe70::/64 &
         sleep 5
-        ip a add 172.27.0.3/24 dev rosenpass0
-        sleep 5
+        ip a add fe70::3/64 dev rosenpass0
         tail -f /dev/null
     volumes:
       - ./config/sysctl.conf:/etc/sysctl.conf
@@ -53,15 +52,15 @@ services:
         cp -r /client.rosenpass-public /keys
         echo "wait 5 seconds for the keys to be available"
         sleep 5 
-        rp exchange client.rosenpass-secret dev rosenpass0 peer /keys/server.rosenpass-public endpoint 172.26.0.3:9999 allowed-ips 172.27.0.0/24,172.26.0.0/24 &
+        rp exchange client.rosenpass-secret dev rosenpass0 peer /keys/server.rosenpass-public endpoint 172.26.0.3:9999 allowed-ips fe70::/64 &
         sleep 5
-        ip a add 172.27.0.4/16 dev rosenpass0
+        ip a add fe70::4/64 dev rosenpass0
         tail -f /dev/null
     volumes:
       - ./config/sysctl.conf:/etc/sysctl.conf
       - key-directory:/keys
     healthcheck:
-      test: ["CMD", "ping", "-c", "4", "-I", "rosenpass0", "172.27.0.3"]
+      test: ["CMD", "ping", "-6", "-c", "4", "-I", "rosenpass0", "fe70::3"]
       interval: 20s
       timeout: 5s
       retries: 10
