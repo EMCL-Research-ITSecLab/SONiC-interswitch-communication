@@ -9,26 +9,14 @@ services:
     cap_add:
       - NET_ADMIN
     privileged: true
-    command: 
-      - /bin/bash
-      - -c
-      - |
-        echo "reload sysctl"
-        sysctl -p
-        echo "generate server keys"
-        rp genkey server.rosenpass-secret
-        rp pubkey server.rosenpass-secret server.rosenpass-public
-        echo "copy keys to volume"
-        cp -r /server.rosenpass-public /keys
-        echo "wait 5 seconds for the keys to be available"
-        sleep 5 
-        rp exchange server.rosenpass-secret dev rosenpass0 listen 172.26.0.3:9999 peer /keys/client.rosenpass-public allowed-ips 172.27.0.4 &
-        sleep 5
-        ip a add 172.27.0.3/24 dev rosenpass0
-        sleep 5
-        tail -f /dev/null
+    environment:
+      - MODE=server
+      - SERVER_PUBLIC_IPV4=172.26.0.3
+      - SERVER_PORT=9999
+      - CLIENT_PUBKEY_DIR=/keys/rosenpass-client-public
+      - ALLOWED_IPS=172.27.0.4
+      - SERVER_VPN_IPV4=172.27.0.3/24
     volumes:
-      - ./config/sysctl.conf:/etc/sysctl.conf
       - key-directory:/keys
 
   client:
@@ -40,25 +28,14 @@ services:
     cap_add:
       - NET_ADMIN
     privileged: true
-    command: 
-      - /bin/bash
-      - -c
-      - |
-        echo "reload sysctl"
-        sysctl -p
-        echo "generate client keys"
-        rp genkey client.rosenpass-secret
-        rp pubkey client.rosenpass-secret client.rosenpass-public
-        echo "copy keys to volume"
-        cp -r /client.rosenpass-public /keys
-        echo "wait 5 seconds for the keys to be available"
-        sleep 5 
-        rp exchange client.rosenpass-secret dev rosenpass0 peer /keys/server.rosenpass-public endpoint 172.26.0.3:9999 allowed-ips 172.27.0.0/24,172.26.0.0/24 &
-        sleep 5
-        ip a add 172.27.0.4/16 dev rosenpass0
-        tail -f /dev/null
+    environment:
+      - MODE=client
+      - SERVER_PUBLIC_IPV4=172.26.0.3
+      - SERVER_PORT=9999
+      - SERVER_PUBKEY_DIR=/keys/rosenpass-server-public
+      - ALLOWED_IPS=172.26.0.3,172.27.0.0/24
+      - CLIENT_VPN_IPV4=172.27.0.4/24
     volumes:
-      - ./config/sysctl.conf:/etc/sysctl.conf
       - key-directory:/keys
     healthcheck:
       test: ["CMD", "ping", "-c", "4", "-I", "rosenpass0", "172.27.0.3"]
