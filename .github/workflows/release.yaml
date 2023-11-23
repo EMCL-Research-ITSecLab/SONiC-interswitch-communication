@@ -14,6 +14,9 @@ jobs:
     needs: build-and-test-image
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Publish SNAPSHOT
         if: contains(github.ref, 'develop')
         run: |
@@ -29,23 +32,53 @@ jobs:
           echo "Main version: $PUBLISH_VERSION"
 
 
-      - name: load the image
+      - name: load the image from storage
         uses: actions/download-artifact@v2
         with:
           name: rosenpass
           path: .
 
-      - name: Load docker image
+      - name: Load docker image to docker
         run: docker load -i image.tar
       
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{secrets.DOCKER_USERNAME}}
-          password: ${{secrets.DOCKER_ACCESS_TOKEN}}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
       - name: tag the image
-        run: docker tag rosenpass:latest "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+        run: |
+          echo "IMAGE_NAME=${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION" >> $GITHUB_ENV
+          # docker tag rosenpass:latest ${{ env.IMAGE_NAME }}
+
+
+      - name: delete old snapshot versions if new snapshot arrived
+        if: contains(github.ref, 'develop')
+        run: |
+          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${{secrets.DOCKER_USERNAME}}'", "password": "'${{secrets.DOCKER_ACCESS_TOKEN}}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+          
+          tags=$(curl -X GET -H "Accept: application/json" -H "Authorization: JWT ${TOKEN}" -s  https://hub.docker.com/v2/repositories/${{secrets.DOCKER_USERNAME}}/rosenpass/tags/ | jq -r '.results')
+          len=$(echo "$test" | jq -r 'length')
+          for i in $(seq 0 $(($len - 1)))
+          do
+              name=$(echo "$tags" | jq -r ".[$i].name")
+              if [[ "$name" == *"SNAPSHOT"* ]]
+              then
+                  echo "remove old snapshot $name"
+                  curl -X DELETE -H "Accept: application/json" -H "Authorization: JWT ${TOKEN}" -s  https://hub.docker.com/v2/repositories/${{secrets.DOCKER_USERNAME}}/rosenpass/tags/$name
+              fi
+          done
 
       - name: push image to registry
         run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+        
+
+      - name: Add description to dockerhub
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          repository: ${{ secrets.DOCKER_USERNAME }}/rosenpass
+          short-description: ${{ vars.IMAGE_DESCRIPTION }}
+          readme-filepath: ./README.image.md
