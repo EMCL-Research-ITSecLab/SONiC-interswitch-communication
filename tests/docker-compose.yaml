@@ -5,17 +5,16 @@ services:
     networks:
       public:
         ipv4_address: 172.26.0.3
-        ipv6_address: fe90::3
     cap_add:
       - NET_ADMIN
     privileged: true
     environment:
       - MODE=server
-      - SERVER_PUBLIC_IPV4=172.26.0.3
+      - SERVER_PUBLIC_IP=172.26.0.3
       - SERVER_PORT=9999
       - CLIENT_PUBKEY_DIR=/keys/rosenpass-client-public
       - ALLOWED_IPS=172.27.0.4
-      - SERVER_VPN_IPV4=172.27.0.3/24
+      - SERVER_VPN_IP=172.27.0.3/24
     volumes:
       - key-directory:/keys
 
@@ -24,17 +23,16 @@ services:
     networks:
       public:
         ipv4_address: 172.26.0.4
-        ipv6_address: fe90::4
     cap_add:
       - NET_ADMIN
     privileged: true
     environment:
       - MODE=client
-      - SERVER_PUBLIC_IPV4=172.26.0.3
+      - SERVER_PUBLIC_IP=172.26.0.3
       - SERVER_PORT=9999
       - SERVER_PUBKEY_DIR=/keys/rosenpass-server-public
       - ALLOWED_IPS=172.26.0.3,172.27.0.0/24
-      - CLIENT_VPN_IPV4=172.27.0.4/24
+      - CLIENT_VPN_IP=172.27.0.4/24
     volumes:
       - key-directory:/keys
     healthcheck:
@@ -46,15 +44,10 @@ services:
 networks:
   public:
     driver: bridge
-    enable_ipv6: true
-    driver_opts:
-      com.docker.network.enable_ipv6: "true"
     ipam:
       driver: default
       config:
       - subnet: 172.26.0.0/16
         gateway: 172.26.0.1
-      - subnet: fe90::/64
-        gateway: fe90::1
 volumes: 
   key-directory:
