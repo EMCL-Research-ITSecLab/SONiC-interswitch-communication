@@ -50,16 +50,15 @@ jobs:
       - name: tag the image
         run: |
           echo "IMAGE_NAME=${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION" >> $GITHUB_ENV
-          # docker tag rosenpass:latest ${{ env.IMAGE_NAME }}
+          docker tag rosenpass:latest ${{ env.IMAGE_NAME }}
 
 
       - name: delete old snapshot versions if new snapshot arrived
         if: contains(github.ref, 'develop')
         run: |
           TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${{secrets.DOCKER_USERNAME}}'", "password": "'${{secrets.DOCKER_ACCESS_TOKEN}}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
-          
           tags=$(curl -X GET -H "Accept: application/json" -H "Authorization: JWT ${TOKEN}" -s  https://hub.docker.com/v2/repositories/${{secrets.DOCKER_USERNAME}}/rosenpass/tags/ | jq -r '.results')
-          len=$(echo "$test" | jq -r 'length')
+          len=$(echo "$tags" | jq -r 'length')
           for i in $(seq 0 $(($len - 1)))
           do
               name=$(echo "$tags" | jq -r ".[$i].name")
