@@ -49,8 +49,8 @@ jobs:
 
       - name: tag the image
         run: |
-          echo "IMAGE_NAME=${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION" >> $GITHUB_ENV
-          docker tag rosenpass:latest ${{ env.IMAGE_NAME }}
+          IMAGE_NAME="${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+          docker tag rosenpass:latest $IMAGE_NAME
 
 
       - name: delete old snapshot versions if new snapshot arrived
