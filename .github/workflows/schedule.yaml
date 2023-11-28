@@ -49,7 +49,7 @@ jobs:
                 for RELEASE_NR in $(seq 0 $(($result_count - 1)))
                 do
                   LATEST_PUSHED_RELEASE=$(cat response.json | jq --argjson RELEASE_NR "$RELEASE_NR" -r '.results[$RELEASE_NR].name')
-                  if [ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]; then
+                  if [[ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]]; then
                     echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Continuing ..."
                     break
                   else
@@ -61,7 +61,7 @@ jobs:
                 for RELEASE_NR in $(seq 0 $(($result_count - 1)))
                 do
                   LATEST_PUSHED_RELEASE=$(cat response.json | jq --argjson RELEASE_NR "$RELEASE_NR" -r '.results[$RELEASE_NR].name')
-                  if [ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]; then
+                  if [[ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]]; then
                     echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Is a SNAPSHOT, looking for non SNAPSHOT release ..."
                   else
                     echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Continuing ..."
