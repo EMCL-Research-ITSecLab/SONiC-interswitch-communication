@@ -1,6 +1,11 @@
 # rosenpass-docker
 Rosenpass Docker Implementation
 
+[![Build and Test](https://github.com/EMCL-Research-ITSecLab/rosenpass-docker/actions/workflows/ci.yaml/badge.svg?branch=develop)](https://github.com/EMCL-Research-ITSecLab/rosenpass-docker/actions/workflows/ci.yaml) [![Release Pipeline](https://github.com/EMCL-Research-ITSecLab/rosenpass-docker/actions/workflows/release.yaml/badge.svg?branch=develop)](https://github.com/EMCL-Research-ITSecLab/rosenpass-docker/actions/workflows/release.yaml)
+![Docker Image Version (latest semver)](https://img.shields.io/docker/v/stefan96/rosenpass?sort=semver&logo=docker&label=latest%20stable%20version&labelColor=lightgrey&color=blue&link=https%3A%2F%2Fhub.docker.com%2Fr%2Fstefan96%2Frosenpass%2Ftags) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/stefan96/rosenpass?logo=docker&label=latest%20snapshot%20version&labelColor=lightgrey&color=blue&link=https%3A%2F%2Fhub.docker.com%2Fr%2Fstefan96%2Frosenpass%2Ftags)
+
+
+
 
 ## Setup
 
@@ -37,6 +42,10 @@ The above test is also automated via pytest. To execute it, install the dependen
 ```pip install -r tests/requirements.txt```
 Then execute the tests by switching into the tests directory and run
 ```pytest -s```
+
+
+### Manual setup without docker compose
+It is also possible to start the images in 3 different modes, without using the docker compose file. For the modes available, please refer to the manual [here](README.image.md)
 
 
 ## Tools used 
@@ -83,7 +92,23 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
   - sysctl options enabled to allow ipv6
 
 
+### Testing Frameworks
+
+#### Pytest
+
+In order to automate the tests in the CI environment, Pytest was used. At the moment the tests directory contains 2 test scenarios that are checked each time in the CI Pipeline (on PR and on Release). These Tests covere the following topics:
+- Setting up a client and a server container, using IPv4 and running a connection Test
+- Setting up a client and a server container, using IPv6 and running a connection Test
+
+On top of these, more complex and exhaustive testing can be implemented.
+
+
+#### Act
+[Act](https://github.com/nektos/act) is a CLI tools to test out github action workflows locally in docker containers, without them running on the remote github actions runner and thus causing spam for everyone subscribed to the Repository.  
+
+
 ### Next-steps
 
-- elaborate client and server mode when answer for ipv4 topic
-- build the image if only the flake lock is different to support builds that have new packages included too
+- dynamic peer setting for server
+- test on gns3
+- 
