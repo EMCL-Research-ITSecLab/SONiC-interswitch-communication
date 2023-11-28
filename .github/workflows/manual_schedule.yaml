@@ -1,4 +1,4 @@
-name: Schedule build
+name: Schedule build on PR
 
 on:
   pull_request: 
