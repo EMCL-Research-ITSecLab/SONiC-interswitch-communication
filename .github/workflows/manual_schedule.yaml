@@ -1,0 +1,44 @@
+name: Schedule build on PR
+
+on:
+  pull_request: 
+    types: 
+        - closed
+    branches:
+        - 'main'
+        - 'develop'
+  workflow_dispatch:
+    
+jobs:
+  check_releases:
+    runs-on: ubuntu-latest
+    steps:
+    - name: check for new release
+      shell: bash
+      run: |
+        echo "Retrieve rosenpass release versions"
+        RELEASE=$(curl -o rosenpass_releases.json -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
+        release_counts=$(cat rosenpass_releases.json | jq '. | length')
+        for RELEASE_NR in $(seq 0 $(($release_counts - 1)))
+        do
+          RELEASE=$(curl -s https://api.github.com/repos/rosenpass/rosenpass/tags | jq -r .[$RELEASE_NR].name) 
+          if [[ "${RELEASE}" == *"whitepaper"* ]]; then
+            echo "Release $RELEASE_NR is whitepaper release, progressing ..."
+          elif [ -z "${RELEASE}" ] || [ "${RELEASE}" == "null" ]; then
+            echo "Release $RELEASE_NR could not be retrieved, progressing ..."
+          else
+            echo "found latests release in Release Nr: $RELEASE_NR, with version $RELEASE"
+            break
+          fi
+        done
+        echo "RELEASE=$RELEASE" >> $GITHUB_ENV
+
+        for ref in develop main
+        do
+            echo "Trigger build for new version and branch $ref"
+            curl -X POST \
+            -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/release.yaml/dispatches \
+            -d "{\"ref\":\"$ref\",\"inputs\":{\"version\":\"$RELEASE\"}}"
+        done

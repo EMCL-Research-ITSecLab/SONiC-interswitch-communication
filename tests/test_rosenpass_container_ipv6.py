@@ -8,20 +8,21 @@ LOGGER = logging.getLogger(__name__)
 def setup_module(module):
     # start the containers; Healthcheck in compose file ensures that the containers are ready
     container = subprocess.run(
-        ["docker", "compose", "up", "--wait"], capture_output=True, text=True
+        ["docker", "compose", "-f", "./docker-compose_ipv6.yaml", "up", "--wait"],
+        capture_output=True,
+        text=True,
     )
 
 
 def teardown_module(module):
     subprocess.run(["docker", "compose", "stop"])
-    subprocess.run(["docker", "network", "rm", "tests_rosenpass"])
-    subprocess.run(["docker", "compose", "rm", "-f"])
+    subprocess.run(["docker", "compose", "down"])
 
 
 def test_ping_from_client():
     client = docker.from_env()
     container_name = "tests-client-1"
-    command_to_run = ["ping6", "-c", "4", "fe90::3%rosenpass0"]
+    command_to_run = ["ping", "-6", "-I", "rosenpass0", "-c", "4", "fe70::3"]
     response = client.containers.get(container_name).exec_run(command_to_run)
 
     LOGGER.info(f"Exit code: {response.exit_code}")
