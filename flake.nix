@@ -14,39 +14,97 @@
         tag = "latest";
         contents = [ 
           rosenpass.packages.x86_64-linux.rosenpass
+          pkgs.iputils
           pkgs.coreutils-full
           pkgs.bash 
           pkgs.gnugrep 
           pkgs.iproute2 
           pkgs.procps
           pkgs.wireguard-tools
-          pkgs.inetutils
           pkgs.iana-etc
+          pkgs.iptables
+          pkgs.tcpdump
           ];
         
         config = {
           Cmd = [
             "${pkgs.bash}/bin/bash" "-c"
             ''
-              ${pkgs.coreutils-full}/bin/echo "generate public and private keys";
-              ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp genkey rosenpass-secret;
-              ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp pubkey rosenpass-secret rosenpass-public;
+              echo "creating key directory...";
+              mkdir -p /keys;
 
-              if [ $CLIENT == "True" ]; 
-              then 
-                echo "Client mode enabled...";
-                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange rosenpass-secret dev rosenpass0 peer $SERVER_PUBKEY_DIR endpoint $SERVER_IPV4 allowed-ips $ALLOWED_IPV6_IPS &;
-                sleep 5;
-                ip a add $CLIENT_IPV6 dev rosenpass0;
+              print_common_vars () {
+                echo "
+                ALLOWED_IPS=$ALLOWED_IPS
+                SERVER_PUBLIC_IP=$SERVER_PUBLIC_IP
+                SERVER_PORT=$SERVER_PORT
+                ";
+              } 
 
-              elif [ $SERVER == "True" ];
+
+              if [ -z "$IPV6" ];
               then
-                echo "Server mode enabled...";
-                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange rosenpass-secret dev rosenpass0 listen $SERVER_IPV4_LISTEN_ADDR peer $CLIENT_PUKEY_DIR allowed-ips $ALLOWED_IPV6_IPS &;
-                sleep 5;
-                ip a add $SERVER_IPV6 dev rosenpass0;
-
+                echo "Activating IPv6";
+                touch /etc/sysctl.conf;
+                echo "
+                  net.ipv6.conf.all.disable_ipv6 = 0
+                  net.ipv6.conf.default.disable_ipv6 = 0
+                  net.ipv6.conf.lo.disable_ipv6 = 0   
+                " > /etc/sysctl.conf;
+                sysctl -p ;
               fi;
+
+              if [ "$MODE" == "client" ]; 
+              then 
+                echo "
+                ****************** Configuration Options ******************
+                MODE=$MODE
+                CLIENT_VPN_IP=$CLIENT_VPN_IP
+                SERVER_PUBKEY_DIR=$SERVER_PUBKEY_DIR
+                $(print_common_vars)
+                ***********************************************************
+                ";
+                
+                echo "generate client public and private keys";
+                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp genkey /keys/rosenpass-client-secret;
+                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp pubkey /keys/rosenpass-client-secret /keys/rosenpass-client-public;
+                echo "connect to the server";
+                sleep 5;
+                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange /keys/rosenpass-client-secret dev rosenpass0 peer "$SERVER_PUBKEY_DIR" endpoint "$SERVER_PUBLIC_IP":"$SERVER_PORT" allowed-ips "$ALLOWED_IPS" &
+                sleep 5;
+                echo "Add ip to the wireguard interface";
+                ip a add "$CLIENT_VPN_IP" dev rosenpass0;
+
+              elif [ "$MODE" == "server" ];
+              then
+                echo "
+                ****************** Configuration Options ******************
+                MODE=$MODE
+                SERVER_VPN_IP=$SERVER_VPN_IP
+                CLIENT_PUBKEY_DIR=$CLIENT_PUBKEY_DIR
+                $(print_common_vars)
+                ***********************************************************
+                ";
+
+                echo "generate server public and private keys";
+                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp genkey /keys/rosenpass-server-secret;
+                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp pubkey /keys/rosenpass-server-secret /keys/rosenpass-server-public;
+                echo "Setting connection for the peer";
+                sleep 5;
+                ${rosenpass.packages.x86_64-linux.rosenpass}/bin/rp exchange /keys/rosenpass-server-secret dev rosenpass0 listen "$SERVER_PUBLIC_IP":"$SERVER_PORT" peer "$CLIENT_PUBKEY_DIR" allowed-ips "$ALLOWED_IPS" &
+                sleep 5;
+                echo "Add ip to the wireguard interface";
+                ip a add "$SERVER_VPN_IP" dev rosenpass0;
+              elif [ "$MODE" == "standalone" ];
+              then
+                echo "MODE=$MODE";
+                echo "Leaving everything up to the user..."
+              else
+                echo "Specified an invalid mode (MODE=$MODE)";
+                exit 1;
+              fi;
+
+              tail -f /dev/null
             ''
           ];
         };
@@ -57,13 +115,3 @@
     packages.x86_64-linux.default = self.dockerImages.rosenpass;
   };
 }
-
-        
-# SERVER_PUBKEY_DIR=/server-pub-keys/rosenpass-public
-# SERVER_IPV4=172.26.0.3:9999
-# ALLOWED_IPV6_IPS=fe90::/64
-# CLIENT_IPV6=fe90::4/64
-
-# SERVER_IPV4_LISTEN_ADDR=172.26.0.3:9999
-# CLIENT_PUKEY_DIR=/client-keys/rosenpass-public
-# SERVER_IPV6=fe90::3/64
