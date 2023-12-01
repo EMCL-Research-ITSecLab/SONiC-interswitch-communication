@@ -49,3 +49,9 @@ jobs:
 
       - name: push image to registry
         run: docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:$PUBLISH_VERSION"
+      
+      - name: Tag and upload as latest if main version was build
+        if: contains(github.ref, 'main')
+        run: |
+          docker tag rosenpass:latest "${{secrets.DOCKER_USERNAME}}/rosenpass:latest"
+          docker push "${{secrets.DOCKER_USERNAME}}/rosenpass:latest"        
