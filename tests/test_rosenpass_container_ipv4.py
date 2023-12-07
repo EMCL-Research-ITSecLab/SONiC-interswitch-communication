@@ -13,15 +13,21 @@ def setup_module(module):
 
 
 def teardown_module(module):
+    # remove all keys created to not confuse them in future tests
+    run_docker_command("tests-client-1", "rm -rf /keys/*")
     subprocess.run(["docker", "compose", "stop"])
     subprocess.run(["docker", "compose", "down"])
 
 
 def test_ping_from_client():
-    client = docker.from_env()
-    container_name = "tests-client-1"
-    command_to_run = ["ping", "-I", "rosenpass0", "-c", "4", "172.27.0.3"]
-    response = client.containers.get(container_name).exec_run(command_to_run)
-
+    response = run_docker_command(
+        "tests-client-1", "ping -I rosenpass0 -c 4 172.27.0.3"
+    )
     LOGGER.info(f"Exit code: {response.exit_code}")
     assert int(response.exit_code) == 0
+
+
+def run_docker_command(container: str, command: str):
+    client = docker.from_env()
+    command = command.split()
+    return client.containers.get(container).exec_run(command)

@@ -15,7 +15,7 @@
         name = "rosenpass";
         tag = "latest";
         contents = [ 
-          rosenpass.packages.x86_64-linux.rosenpass
+          rosenpass.packages.${system}.rosenpass
           pkgs.iputils
           pkgs.coreutils-full
           pkgs.bash 
@@ -26,17 +26,17 @@
           pkgs.iana-etc
           pkgs.iptables
           pkgs.tcpdump
+          config.defaultPackage.${system}
           ];
         
         config = {
           Cmd = [
-            "${config.defaultPackage.${system}}"
+            "${pkgs.bash}/bin/bash" "-c" "/bin/init.sh"
           ];
         };
       };
 
 
-    # not copmpletely correct to use these, but to prevent errors when only using nix build . 
     packages.${system}.default = self.dockerImages.rosenpass;
   };
 }

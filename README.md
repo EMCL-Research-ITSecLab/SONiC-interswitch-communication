@@ -113,14 +113,16 @@ Furthermore, with the information provided, a startup script will be created tha
 ### 2. Exchange the public keys
 
 Now, the server needs the public keys of every client, and the clients need the publickey of the server. This part is not automated yet and requires you to manually exchange the keys ( i.e. copy the public key directories to the other machine(s) ).
-For a server, the public key will be created at /keys/rosenpass-server-public-<random-salt>. The random salt is used to prevent conflicts if multiple server or clients are set up, so you can still identify the keys. You can copy the key to your host machine using 
+For a server, the public key will be created at /keys/rosenpass-server-public. You can copy the key to your host machine using 
 ```
-docker cp server:/keys/rosenpass-server-public-<random-salt> ./
+docker cp server:/keys/rosenpass-server-public ./
 ```
 From there you can copy the key to the destined container(s). 
 For clients, the key will be located at:
 
-/keys/rosenpass-client-public-\<random-salt\>
+/keys/rosenpass-client-public
+
+**When you transfer all the client keys to the server, remember to either rename them to be able to distinguish between them or to save them to different directories**
 
 ### 3. Start the server script
 After transfering the public key directories from your clients to the server, 
@@ -263,10 +265,8 @@ On top of these, more complex and exhaustive testing can be implemented.
 
 ### Next-steps
 
-- auslagern des bashscripts in extra flake
-- aktuell gehen die tests nicht mehr weil random salt in docker compose
-  - salt ersetzen mit hostname ?
-  - gar kein salt --> was dann mit multiplen clients dockerfile?
+- wenn fertig --> push auf develop --> Nutze snapshot image um auf vms zu testen
+- gns3
 
 general stuff:
   - create minimalistic rust REST server to handle automated key exchange
