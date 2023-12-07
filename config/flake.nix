@@ -155,6 +155,6 @@
 
           tail -f /dev/null
         '';
-        packages.${system}.default = self.initScript;
+        defaultPackage.${system} = self.initScript;
   };
 }
