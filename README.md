@@ -5,9 +5,165 @@ Rosenpass Docker Implementation
 ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/stefan96/rosenpass?sort=semver&logo=docker&label=latest%20stable%20version&labelColor=lightgrey&color=blue&link=https%3A%2F%2Fhub.docker.com%2Fr%2Fstefan96%2Frosenpass%2Ftags) ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/stefan96/rosenpass?logo=docker&label=latest%20snapshot%20version&labelColor=lightgrey&color=blue&link=https%3A%2F%2Fhub.docker.com%2Fr%2Fstefan96%2Frosenpass%2Ftags)
 
 
+## Getting started
+
+To use the image in a custom setup, the following steps need to be applied:
+
+For demonstration purposes we will use 4 virtual machines. 1 will act as server, 3 as clients, with the goal to connect the clients via the server with each other. Please note that in this setup the machines have no shared storage, hence the setup is not fully automated as with the docker-compose files (which is described [here](#fully-automated-setup-example-with-docker-compose)), since the public keys cannot be exchanged that easily. 
+Furthermore, we assume the following:
 
 
-## Setup
+| Configuration                                    | Value                                                 |
+|------------------------------------------------|----------------------------------------------------------------------|
+|Server public IP | 172.31.100.100  |
+|Client 1 public IP| 172.31.100.101 |
+|Client 2 public IP| 172.31.100.102 |
+|Client 3 public IP| 172.31.100.103 |
+|Server VPN IP | 10.11.12.100/24  |
+|Client 1 VPN IP| 10.11.12.101/24 |
+|Client 2 VPN IP| 10.11.12.102/24 |
+|Client 3 VPN IP| 10.11.12.103/24 |
+|Allowed VPN CIDR| 10.11.12.0/24 |
+|IPv6 enabled| False|
+
+
+
+**If you'd like to use this example on one machine with 4 docker containers, don't forget to create a network so that the containers can reach each other.**
+
+
+<!-- TODO: insert depiction of the architecture -->
+
+### 1. Start the server and client instances
+
+First start the clients by running for client1:
+
+client 1:
+```
+docker run -d \
+ --cap-add=NET_ADMIN \
+ -e MODE=client \
+ -e SERVER_PUBLIC_IP="172.31.100.100" \
+ -e SERVER_PORT="9999" \
+ -e CLIENT_VPN_IP=10.11.12.101/24 \
+ --privileged \
+ --name client1 \
+ stefan96/rosenpass:latest \
+ ```
+
+client 2:
+```
+docker run -d \
+ --cap-add=NET_ADMIN \
+ -e MODE=client \
+ -e SERVER_PUBLIC_IP="172.31.100.100" \
+ -e SERVER_PORT="9999" \
+ -e CLIENT_VPN_IP=10.11.12.102/24 \
+ --privileged \
+ --name client2 \
+ stefan96/rosenpass:latest \
+ ```
+
+
+client 3:
+```
+docker run -d \
+ --cap-add=NET_ADMIN \
+ -e MODE=client \
+ -e SERVER_PUBLIC_IP="172.31.100.100" \
+ -e SERVER_PORT="9999" \
+ -e CLIENT_VPN_IP=10.11.12.103/24 \
+ --privileged \
+ --name client3 \
+ stefan96/rosenpass:latest \
+ ```
+
+client 4:
+```
+docker run -d \
+ --cap-add=NET_ADMIN \
+ -e MODE=client \
+ -e SERVER_PUBLIC_IP="172.31.100.100" \
+ -e SERVER_PORT="9999" \
+ -e CLIENT_VPN_IP=10.11.12.104/24 \
+ --privileged \
+ --name client4 \
+ stefan96/rosenpass:latest \
+ ```
+
+and for the server:
+
+```
+docker run -d \
+ --cap-add=NET_ADMIN \
+ -e MODE="server" \
+ -e SERVER_PUBLIC_IP="172.31.100.100" \
+ -e SERVER_PORT="9999" \
+ -e SERVER_VPN_IP="10.11.12.100/24" \
+ --privileged \
+ --name "server" \
+ stefan96/rosenpass
+```
+
+This will create key pairs on each machine (public and private) which we will be using to authenticate the machines with each other.
+Furthermore, with the information provided, a startup script will be created that contains all the commands necessary to execute, once the keys are exchanged
+
+
+**Please note:** Carefully review your input information as a startup script will be generated from them. So if you type in something wrong you will either need to adjust the startup script or redo all the steps
+
+### 2. Exchange the public keys
+
+Now, the server needs the public keys of every client, and the clients need the publickey of the server. This part is not automated yet and requires you to manually exchange the keys ( i.e. copy the public key directories to the other machine(s) ).
+For a server, the public key will be created at /keys/rosenpass-server-public. You can copy the key to your host machine using 
+```
+docker cp server:/keys/rosenpass-server-public ./
+```
+From there you can copy the key to the destined container(s). 
+For clients, the key will be located at:
+
+/keys/rosenpass-client-public
+
+**When you transfer all the client keys to the server, remember to either rename them to be able to distinguish between them or to save them to different directories**
+
+### 3. Start the server script
+After transfering the public key directories from your clients to the server, 
+log into the docker container of your server and run the start script with
+``` bash /etc/open_server_connection.sh ```
+You will be prompted for the location where you saved each public key directory of the clients. Type in one at a time and submit with "enter".
+Afterward you will need to type in the IP that is allowed for this key (in other words: which VPN IP shall be assigned to this key. This is the client VPN IP of the machine that will be using the according private key to authenticate).
+Submit with "enter". Repeat the process for each key and IP.
+Afterward, the server will start and allow the connections from the clients.
+
+```
+Example: 
+Fro client1 the pronpts could look like this
+1. path/to/the/pubkey-of-client1/
+2. 10.11.12.101
+```
+
+### 4. Start the client scripts
+After transfering the public key directory from your server to the clients, 
+log into the each client docker container and run the start script with
+``` bash /etc/connect_to_server.sh ```
+You will be prompted for the location of the servers public key and afterward for the allowed IP range the tunnel shall be established for. In this example, use 10.11.12.0/24 to be able to connect to all clients. 
+Afterward, the clients will establish a tunnel to the setup server
+Repeat this on each client machine.
+
+```
+Example:
+1. path/to/the/pubkey-of-client1/
+2. 10.11.12.0/24
+```
+
+Here, we are using the CIDR that contains all the clients and the server in the VPN to be able to reach them. Your setup could look different depending on your usecase.
+
+### 5. Connection test 
+From an arbitrary client, ping the server by using 
+```ping 10.11.12.100```
+This should ping the server within the VPN. Afterward try to connect to another client (e.g. client 3) by running:
+```ping 10.11.12.103```
+This will send the requests to the server and from there to the other client in the network. You can confirm this by running 
+
+## Fully automated setup example with docker compose 
 
 In order to build and start the containers in a local environment, simply run from the root of the project:
 
@@ -29,7 +185,7 @@ docker compose down
 ### Manual Tests
 To manually test the containers, log into the client container and run: 
 ```ping -6 -I rosenpass0 fe70::3``` (ipv6 version)
-```ping -I rosenpass0 172.27.0.3``` (ipv4 version)
+```ping -I rosenpass0 172.26.0.3``` (ipv4 version)
 
 This will try to ping the server container via the rosenpass interface.
 On the server container you can run 
@@ -109,6 +265,10 @@ On top of these, more complex and exhaustive testing can be implemented.
 
 ### Next-steps
 
-- dynamic peer setting for server
-- test on gns3
-- 
+- wenn fertig --> push auf develop --> Nutze snapshot image um auf vms zu testen
+- gns3
+
+general stuff:
+  - create minimalistic rust REST server to handle automated key exchange
+    - ssh not feaesible since it would require to have users and root access to all peers in the network   
+  - test on gns3

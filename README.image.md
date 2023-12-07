@@ -6,6 +6,8 @@ The image can be used as a client as well as a server. If you select either clie
 # Sample Setup
 To see a fully working IPv and IPv4 sample, have a look at the Repository for the image [here](https://github.com/EMCL-Research-ITSecLab/rosenpass-docker). In the subdirectory "tests" are compose files for each scenario. Please note that these require the image to be present locally, so you will need to build the nix flake as described there.
 
+If you want to see how a custom setup is done, please refer to the "Getting started" section in the [README](https://github.com/EMCL-Research-ITSecLab/rosenpass-docker) of the main Repo
+
 # Client mode
 To start the image in client mode, run 
 ```
