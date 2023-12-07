@@ -2,6 +2,7 @@ name: Build the docker image
 
 on: 
     workflow_call:
+    workflow_dispatch:
 
 jobs:
     build:
@@ -15,6 +16,12 @@ jobs:
               with:
                 extra_nix_config: |
                   experimental-features = nix-command flakes
+              
+            # I know this is bad for reproducability, but it is necessary otherwise the pipeline will fail
+            # as it does not recognize the relative path correctly, set in the lock file. And i don't want to tamper with the file
+            # This should have no effect on reproducability, it is just for the CI to work 
+            - name: remove lock
+              run: rm flake.lock
 
             - name: Build flake
               run: nix build .
