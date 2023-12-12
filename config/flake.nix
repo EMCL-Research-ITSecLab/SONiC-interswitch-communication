@@ -60,8 +60,11 @@
               echo "exchanging keys..."
               /bin/rp exchange /keys/rosenpass-client-secret dev rosenpass0 peer "$SERVER_PUBKEY_DIR" endpoint "$SERVER_PUBLIC_IP":"$SERVER_PORT" allowed-ips "$ALLOWED_IPS" &
               sleep 5
+              echo "Masquerade POSTROUTE packages to be able to toute traffic from host"
+              iptables -t nat -A POSTROUTING -o rosenpass0 -j MASQUERADE
               echo "Add ip to the wireguard interface"
               ip a add "$CLIENT_VPN_IP" dev rosenpass0
+
               echo "DONE"
               ' > /etc/connect_to_server.sh ;
             else
@@ -69,8 +72,11 @@
               sleep 5;
               /bin/rp exchange /keys/rosenpass-client-secret dev rosenpass0 peer "$SERVER_PUBKEY_DIR" endpoint "$SERVER_PUBLIC_IP":"$SERVER_PORT" allowed-ips "$ALLOWED_IPS" &
               sleep 5;
+              echo "Masquerade POSTROUTE packages to be able to toute traffic from host";
+              iptables -t nat -A POSTROUTING -o rosenpass0 -j MASQUERADE;
               echo "Add ip to the wireguard interface";
               ip a add "$CLIENT_VPN_IP" dev rosenpass0;
+
             fi;
 
           elif [ "$MODE" == "server" ];
@@ -123,8 +129,11 @@
               echo "Exchanging keys with the clients..."
               $BASE_COMMAND &
               sleep 5
+              echo "Masquerade POSTROUTE packages to be able to toute traffic from host"
+              iptables -t nat -A POSTROUTING -o rosenpass0 -j MASQUERADE
               echo "Add ip to the wireguard interface"
               ip a add "$SERVER_VPN_IP" dev rosenpass0
+
               echo "DONE"
               ' > /etc/open_server_connection.sh ;
             else
@@ -132,8 +141,11 @@
               sleep 5;
               /bin/rp exchange /keys/rosenpass-server-secret dev rosenpass0 listen "$SERVER_PUBLIC_IP":"$SERVER_PORT" peer "$CLIENT_PUBKEY_DIR" allowed-ips "$ALLOWED_IPS" &
               sleep 5;
+              echo "Masquerade POSTROUTE packages to be able to toute traffic from host";
+              iptables -t nat -A POSTROUTING -o rosenpass0 -j MASQUERADE;
               echo "Add ip to the wireguard interface";
               ip a add "$SERVER_VPN_IP" dev rosenpass0;
+
             fi;
 
           elif [ "$MODE" == "standalone" ];

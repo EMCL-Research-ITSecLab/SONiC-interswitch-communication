@@ -25,6 +25,7 @@ Furthermore, we assume the following:
 |Client 3 VPN IP| 10.11.12.103/24 |
 |Allowed VPN CIDR| 10.11.12.0/24 |
 |IPv6 enabled| False|
+|Docker network| name: br0, subnet: 172.28.0.0/24 |
 
 
 
@@ -47,7 +48,7 @@ docker run -d \
  -e CLIENT_VPN_IP=10.11.12.101/24 \
  --privileged \
  --name client1 \
- stefan96/rosenpass:latest \
+ stefan96/rosenpass:latest
  ```
 
 client 2:
@@ -60,7 +61,7 @@ docker run -d \
  -e CLIENT_VPN_IP=10.11.12.102/24 \
  --privileged \
  --name client2 \
- stefan96/rosenpass:latest \
+ stefan96/rosenpass:latest
  ```
 
 
@@ -74,7 +75,7 @@ docker run -d \
  -e CLIENT_VPN_IP=10.11.12.103/24 \
  --privileged \
  --name client3 \
- stefan96/rosenpass:latest \
+ stefan96/rosenpass:latest
  ```
 
 client 4:
@@ -87,7 +88,7 @@ docker run -d \
  -e CLIENT_VPN_IP=10.11.12.104/24 \
  --privileged \
  --name client4 \
- stefan96/rosenpass:latest \
+ stefan96/rosenpass:latest
  ```
 
 and for the server:
@@ -163,6 +164,22 @@ This should ping the server within the VPN. Afterward try to connect to another 
 ```ping 10.11.12.103```
 This will send the requests to the server and from there to the other client in the network. You can confirm this by running 
 
+
+### (optional) 6. Set routes 
+When you are running the container in a native Unix environment or inside wsl but without docker dekstop ([installation guid](https://dev.to/felipecrs/simply-run-docker-on-wsl2-3o8)) then you can also set routes via ``` ip route add ``` and point your desired network traffic through the docker network interface that is attached to the container. This will allow you to use the tunnel for all traffic sent from your device.  
+The following example will demonstrate how to route the traffic for the IP ranges of the VPN subnet (10.11.12.0/24) from the host of client1 through wireguard to server1. This will enable us to ping all other clients as well with their VPN IPs from the host machine of client1.
+
+To do that, you will need to create a network with 
+```docker network create -d bridge --subnet=172.28.0.0/24 br0```
+ and attach it to the container with 
+ ```docker network connect -ip 172.28.0.10 br0 client1```
+By doing this a network interface will be created which you should see with ```ip a```. Afterward, run
+```ip route add 10.11.12.0/24 via 172.28.0.10```
+ to route all traffic with an IP of 10.11.12.0/24 through the wiregaurd container, which is setup to forward these addresses by using the tunnel to the VPN server (Allowed addresses in [step 4](#4-start-the-client-scripts)).
+
+To test the setup, try to ping e.g. the VPN IP of client2 (10.11.12.102) from the host of client1 ```ping 10.11.12.102```. You should now be able to get a proper response.
+
+
 ## Fully automated setup example with docker compose 
 
 In order to build and start the containers in a local environment, simply run from the root of the project:
@@ -181,6 +198,8 @@ To stop and cleanup, run:
 ```
 docker compose down
 ```
+
+To be able to ping the server container from the host via its VPN ip, follow [these steps](#optional-6-set-routes)
 
 ### Manual Tests
 To manually test the containers, log into the client container and run: 
@@ -272,3 +291,14 @@ general stuff:
   - create minimalistic rust REST server to handle automated key exchange
     - ssh not feaesible since it would require to have users and root access to all peers in the network   
   - test on gns3
+  - entscheidungen:
+    - key exchange automatisiert mit rest oder sftp?
+    - nur linux oder auch wsl2 anbindung/setup ?
+      - komplett anders im Verhalten 
+      - oder einfach bei beiden das proxy setting ändern und gleiches verfahren machen ?
+        - nachteil: nicht immer wird proxy unterstützt
+
+
+was passiert bei herunterfahren von client container ?
+muss wieder ein befehl eingegebn werden um zu connecten ?
+inn docku aufnehemen: wie beenden und reestabnlishen ??

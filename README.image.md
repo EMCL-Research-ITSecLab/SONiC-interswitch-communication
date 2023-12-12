@@ -12,15 +12,15 @@ If you want to see how a custom setup is done, please refer to the "Getting star
 To start the image in client mode, run 
 ```
 docker run -d \
- --cap-add=NET_ADMIN
- -e MODE=client
- -e SERVER_PUBKEY_DIR=/path/to/the/VPN_servers/pubkey/within/the/container 
- -e SERVER_PUBLIC_IP=<public ip adress of the server> 
- -e SERVER_PORT=<Any open port, default would be 9999> 
- -e CLIENT_VPN_IP= <IP the client should get in the VPN in CIDR notation>
- -e ALLOWED_IPS=<CIDR notated IP adresses (comma seperated). Depending on your setup set this to the VPN CID like 172.28.0.0/16>
- -e IPV6 <Use this only if your VPN should use ipv6. Please note that the VOPN IPs and allowed IPs should be IPv6 addresses in this case>
- --privileged  
+ --cap-add=NET_ADMIN \
+ -e MODE=client \
+ -e SERVER_PUBKEY_DIR=/path/to/the/VPN_servers/pubkey/within/the/container \
+ -e SERVER_PUBLIC_IP=<public ip adress of the server> \
+ -e SERVER_PORT=<Any open port, default would be 9999> \
+ -e CLIENT_VPN_IP= <IP the client should get in the VPN in CIDR notation> \
+ -e ALLOWED_IPS=<CIDR notated IP adresses (comma seperated). Depending on your setup set this to the VPN CID like 172.28.0.0/16> \
+ -e IPV6 <Use this only if your VPN should use ipv6. Please note that the VPN IPs and allowed IPs should be IPv6 addresses in this case> \
+ --privileged \
  stefan96/rosenpass
 ```
 
@@ -29,15 +29,15 @@ docker run -d \
 To start the image in server mode, run 
 ```
 docker run -d \
- --cap-add=NET_ADMIN
- -e MODE=server
- -e CLIENT_PUBKEY_DIR=/path/to/the/VPN_clients/pubkey/within/the/container 
- -e SERVER_PUBLIC_IP=<public ip address of the server> 
- -e SERVER_PORT=<Any open port, default would be 9999> 
- -e SERVER_VPN_IP= <IP the client should get in the VPN in CIDR notation>
- -e ALLOWED_IPS=<IP for the client to whitelist, in CIDR notation>
- -e IPV6 <Use this only if your VPN should use ipv6. Please note that the VPN IPs and allowed IPs should be IPv6 addresses in this case>
- --privileged  
+ --cap-add=NET_ADMIN \
+ -e MODE=server \
+ -e CLIENT_PUBKEY_DIR=/path/to/the/VPN_clients/pubkey/within/the/container \
+ -e SERVER_PUBLIC_IP=<public ip address of the server> \
+ -e SERVER_PORT=<Any open port, default would be 9999> \
+ -e SERVER_VPN_IP= <IP the client should get in the VPN in CIDR notation> \
+ -e ALLOWED_IPS=<IP for the client to whitelist, in CIDR notation> \
+ -e IPV6 <Use this only if your VPN should use ipv6. Please note that the VPN IPs and allowed IPs should be IPv6 addresses in this case> \
+ --privileged \
  stefan96/rosenpass
 ```
 
@@ -46,9 +46,9 @@ docker run -d \
 To start the image in standalone mode, run 
 ```
 docker run -d \
- --cap-add=NET_ADMIN
- -e MODE=standalone
- --privileged  
+ --cap-add=NET_ADMIN \
+ -e MODE=standalone \
+ --privileged \
  stefan96/rosenpass
 ```
 
