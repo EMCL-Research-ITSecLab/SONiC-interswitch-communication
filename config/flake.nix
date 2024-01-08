@@ -55,7 +55,7 @@
               #!/bin/bash
               echo "please insert next a publickey directory location for the peer you want to connect with as absolute path (e.g. /keys/publickey-example)"
               read SERVER_PUBKEY_DIR
-              echo "please insert next the allowed-ips for this public key (e.g. 10.11.12.0/24)"
+              echo "please insert next the IPs (comma seperated list of CIDRs), the VPN shall be used for this public key (e.g. 10.11.12.0/24,10.11.13.100/32)"
               read ALLOWED_IPS     
               echo "exchanging keys..."
               /bin/rp exchange /keys/rosenpass-client-secret dev rosenpass0 peer "$SERVER_PUBKEY_DIR" endpoint "$SERVER_PUBLIC_IP":"$SERVER_PORT" allowed-ips "$ALLOWED_IPS" &
@@ -114,7 +114,7 @@
                       break       
                   fi
 
-                  echo "please insert next the allowed-ips for this public key (e.g. 10.11.12.0/24)"
+                  echo "please insert next the IP this key shall be assigned for (e.g. 10.11.12.100 if the client that uses this key should have this IP)"
                   read allowed     
 
                   key_ip_dict[$location]=$allowed
