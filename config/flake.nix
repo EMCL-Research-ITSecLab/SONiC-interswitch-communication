@@ -72,7 +72,7 @@
               sleep 5;
               /bin/rp exchange /keys/rosenpass-client-secret dev rosenpass0 peer "$SERVER_PUBKEY_DIR" endpoint "$SERVER_PUBLIC_IP":"$SERVER_PORT" allowed-ips "$ALLOWED_IPS" &
               sleep 5;
-              echo "Masquerade POSTROUTE packages to be able to toute traffic from host";
+              echo "Masquerade POSTROUTE packages to be able to route traffic from host";
               iptables -t nat -A POSTROUTING -o rosenpass0 -j MASQUERADE;
               echo "Add ip to the wireguard interface";
               ip a add "$CLIENT_VPN_IP" dev rosenpass0;
