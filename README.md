@@ -11,7 +11,7 @@ For more information on rosenpass and how it works, please refer to either [the 
 
 To use the image in a custom setup, the following steps need to be applied:
 
-For demonstration purposes we will use 4 virtual machines. 1 will act as server, 3 as clients, with the goal to connect the clients via the server with each other. Please note that in this setup the machines have no shared storage, hence the setup is not fully automated as with the docker-compose files (which is described [here](#fully-automated-setup-example-with-docker-compose)), since the public keys cannot be exchanged that easily. 
+For demonstration purposes we will use 4 virtual machines: 1 will act as server, 3 as clients, with the goal to connect the clients via the server with each other. Please note that in this setup the machines have no shared storage, hence the setup is not fully automated as with the docker-compose files (which are described [here](#fully-automated-setup-example-with-docker-compose)), since the public keys cannot be exchanged that easily. 
 Furthermore, we assume the following:
 
 
@@ -28,7 +28,6 @@ Furthermore, we assume the following:
 |Allowed VPN CIDR| 10.11.12.0/24 |
 |IPv6 enabled| False|
 |Docker network| name: br0, subnet: 172.28.0.0/24 |
-
 
 
 **If you'd like to use this example on one machine with 4 docker containers, don't forget to create a network so that the containers can reach each other.**
@@ -108,14 +107,14 @@ docker run -d \
 ```
 
 This will create key pairs on each machine (public and private) which we will be using to authenticate the machines with each other.
-Furthermore, with the information provided, a startup script will be created that contains all the commands necessary to execute, once the keys are exchanged
+Furthermore, with the information provided by the environment variables, a startup script will be created that contains all the commands necessary to execute, once the keys are exchanged
 
 
 **Please note:** Carefully review your input information as a startup script will be generated from them. So if you type in something wrong you will either need to adjust the startup script or redo all the steps
 
 ### 1.2 Exchange the public keys
 
-Now, the server needs the public keys of every client, and the clients need the publickey of the server. This part is not automated yet and requires you to manually exchange the keys ( i.e. copy the public key directories to the other machine(s) ).
+Now, the server needs the public keys of every client, and the clients need the public-key of the server. This part is not automated yet and requires you to manually exchange the keys ( i.e. copy the public key directories to the other machine(s) ).
 For a server, the public key will be created at /keys/rosenpass-server-public. You can copy the key to your host machine using 
 ```
 docker cp server:/keys/rosenpass-server-public ./
@@ -143,7 +142,7 @@ From client1 the prompts could look like this
 ```
 
 ### 1.4 Start the client scripts
-After transfering the public key directory from your server to the clients, 
+After transferring the public key directory from your server to the clients, 
 log into the each client docker container and run the start script with
 ``` bash /etc/connect_to_server.sh ```
 You will be prompted for the location of the servers public key and afterward for the allowed IP range the tunnel shall be established for. In this example, use 10.11.12.0/24 to be able to connect to all clients. 
@@ -156,7 +155,7 @@ Example:
 2. 10.11.12.0/24
 ```
 
-Here, we are using the CIDR that contains all the clients and the server in the VPN to be able to reach them. Your setup could look different depending on your usecase.
+Here, we are using the CIDR that contains all the clients and the server in the VPN to be able to reach them. Your setup could look different depending on your use case.
 
 ### 1.5 Connection test 
 From an arbitrary client, ping the server by using 
@@ -164,10 +163,12 @@ From an arbitrary client, ping the server by using
 This should ping the server within the VPN. Afterward try to connect to another client (e.g. client 3) by running:
 ```ping 10.11.12.103```
 This will send the requests to the server and from there to the other client in the network. You can confirm this by running 
+```tcpdump -i rosenpass0```
+on the server during the ping. There should appear now entries for each ping.
 
 
 ### (optional) 1.6 Set routes 
-When you are running the container in a native Unix environment or inside wsl but without docker dekstop ([installation guide](https://dev.to/felipecrs/simply-run-docker-on-wsl2-3o8)) then you can also set routes via ``` ip route add ``` and point your desired network traffic through the docker network interface that is attached to the container. This will allow you to use the tunnel for all traffic sent from your device.  
+When you are running the container in a native Unix environment or inside wsl but without docker desktop ([installation guide](https://dev.to/felipecrs/simply-run-docker-on-wsl2-3o8)) then you can also set routes via ``` ip route add ``` and point your desired network traffic through the docker network interface that is attached to the container. This will allow you to use the tunnel for all traffic sent from your device.  
 The following example will demonstrate how to route the traffic for the IP ranges of the VPN subnet (10.11.12.0/24) from the host of client1 through wireguard to server1. This will enable us to ping all other clients as well with their VPN IPs from the host machine of client1.
 
 To do that, you will need to create a network with 
@@ -180,6 +181,8 @@ By doing this a network interface will be created which you should see with ```i
 
 To test the setup, try to ping e.g. the VPN IP of client2 (10.11.12.102) from the host of client1 ```ping 10.11.12.102```. You should now be able to get a proper response.
 
+
+Alternatively you can run the docker containers in host network mode, so that they share the sam network devices and routes with the host. Then you won't need to add the route manually as it will be created automatically on executing the script in the container.
 
 ## 2. Fully automated setup example with docker compose 
 
@@ -226,13 +229,13 @@ It is also possible to start the images in 3 different modes, without using the 
 
 ## 4. Setup on GNS3
 
-To setup a minimal example on gns3, it is recommended to use 3 sonic switches. One will connect the other 2 leaf switches. Each leaf switch will then include a virtual client. This will allow us to communicate from one client with another one via leaf and spine switches, by using a rosenpass VPN to secure the communication. Please note that the clients will not be part of the VPN, only the switches. The topology is displayed below:
+To setup a minimal example on gns3, it is recommended to use 3 sonic switches. One will connect the other 2 leaf switches. Each leaf switch gets assigned a virtual client as children. This setup will allow us to communicate from one client with another one via leaf and spine switches, by using a rosenpass VPN to secure the communication. Please note that the clients will not be part of the VPN, only the switches. The topology is displayed below:
 
 ![Architecture in GNS3](/images/Architecture.png)
 
 For this topology we assume the following: 
 - Each switch is in a management VLAN called VLAN 100
-- Each Leaf ahs its own VLAN to connect its clients (VLAN 200 and VLAN 250)
+- Each leaf has its own VLAN to connect its clients (VLAN 200 and VLAN 250)
 - DHCP for the VLANs will be configured in the switches responsible
 - The following configuration will be applied:
 
@@ -250,12 +253,12 @@ For this topology we assume the following:
   |Client 2 IP| 10.0.250.2 |
 
 
-#### 4.1 Setup Gns3 and configure dhcp
+#### 4.1 Setup GNS3 and configure DHCP
 
 First you will need to replicate the architecture. Make sure to connect the internet sources on the eth0 ports, so for a each switch, eth0 should point to an arbitrary port of the hub that is connected to the GNS3 NAT.
 
 ##### 4.1.1 Create Management VLAN 100
-Now, in order to allow the virtual machines to communicate with each other, it is necessary to configure a dhcp service, as the sonic switches only come with a dhcp relay.  Execute the following steps on the main **spine switch** to setup the neccessary VLAN for the Management connection:
+Now, in order to allow the the communication between the switches directly, it is necessary to setup a VLAN. Furthermore, a DHCP service is needed to assign IP addresses, since the sonic switches only come with a DHCP relay. Execute the following steps on the **spine switch** to setup the necessary VLAN for the Management connection:
 
 ```
 sonic-cli
@@ -293,7 +296,7 @@ ip addr 10.0.100.x/24
 ```
 
 ##### 4.1.2 setup VLANs on the leafs
-Now on the **Leaf switches** run the following (Assuming the spine is connected to the Leaf on the leafs port 1/1 and the kali linux (client of the leaf) is connect to port 1/2 )
+Now on the **leaf switches** run the following (Assuming the spine is connected to the leaf on the leafs port 1/1 and the kali linux (client of the leaf) is connect to port 1/2 )
 **Leaf1:**
 ```        
 sonic-cli
@@ -318,15 +321,14 @@ no shutdown
 switchport access Vlan 250
 ```
 
-This will also create the VLAN on the leaf and assign the ports to attach to it. 
+This will also create the VLAN on the leafs and assign the ports to attach to it. 
 
 
 
-##### 4.1.3 sstart dhcp on the leafs
+##### 4.1.3 Start DHCP on the leafs
 
-In order to use the created VLANs, the dhcp servers need to be setup as well. In order to do that, copy the according configurations, which can be found here for [leaf 1](./dhcp/dhcpd%20-leaf1.conf) and 
-[leaf 2](./dhcp/dhcpd%20-leaf2.conf). Copy these to the directory 
-/home/data and name them dhcpd.conf
+In order to use the created VLANs, the DHCP servers need to be setup as well. In order to do that, copy the according configurations, which can be found here for [leaf 1](./dhcp/dhcpd%20-leaf1.conf) and 
+[leaf 2](./dhcp/dhcpd%20-leaf2.conf). Copy these to the directory ```/home/data``` and name them dhcpd.conf
 
 Afterwards, to start the dhcp server, run:
 ```
@@ -335,10 +337,10 @@ sudo tpcm install name dhcp pull networkboot/dhcpd --args "--network host -v /ho
 
 When you now start the Kali linux instance (which should be connected on eth0 to the leaf switch) then you will notice that it gets an IPv4 address assigned.
 
-#### 4.2 start the containers in the nodes 
+#### 4.2 Start the containers on the nodes 
 
 Start the rosenpass containers for each node accordingly.
-For the Spine switch, run:
+For the spine switch, run:
 ```
 docker run -d --cap-add=NET_ADMIN --network host -e MODE=server -e SERVER_PUBLIC_IP="10.0.100.1" -e SERVER_PORT=9999 -e SERVER_VPN_IP="10.11.12.100/24" --privileged --name=server --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
 ```
@@ -351,7 +353,7 @@ sudo mkdir /home/admin/keys/rosenpass-client2-public/
 sudo chmod -R 777 /home/admin/keys/rosenpass-client2-public/ /home/admin/keys/rosenpass-client1-public/
 ```
 
-For Leaf switch 1, run:
+For Leaf1, run:
 ```
 docker run -d --cap-add=NET_ADMIN --network host -e MODE=client -e SERVER_PUBLIC_IP="10.0.100.1" -e SERVER_PORT=9999 -e CLIENT_VPN_IP="10.11.12.101/24" --privileged --name=client --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
 
@@ -360,7 +362,7 @@ sudo mkdir /home/admin/keys/rosenpass-server-public/
 sudo chmod -R 777 /home/admin/keys/rosenpass-server-public/
 ```
 
-For Leaf switch 2, run:
+For Leaf2, run:
 ```
 docker run -d --cap-add=NET_ADMIN --network host -e MODE=client -e SERVER_PUBLIC_IP="10.0.100.1" -e SERVER_PORT=9999 -e CLIENT_VPN_IP="10.11.12.102/24" --privileged --name=client --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
 
@@ -370,30 +372,30 @@ sudo chmod -R 777 /home/admin/keys/rosenpass-server-public/
 ```
 
 Here we do not use tpcm since it would prevent us from executing commands in the container. Instead we are using dockers restart policy to restart the containers automatically.
-by executing these steps, the container will be set up on the switch and the public and private keys will be copied to the host machine (This is helpful for the subsequent key exchange but also for bringing your own keys in the container). Also we create and care for the permissions of the keys we will need to copy to the respective machines. 
+By executing these steps, the container will be set up on the switch and the public and private keys will be copied to the host machine (This is helpful for the subsequent key exchange but also for bringing your own keys in the container). Also we preemptively took care on permission errors when trying to copy the keys.
 
-#### 4.3 Use sftp to get the keys for the server/clients
-use scp to login to the other switch(es) and download the public keys from there.
+#### 4.3 Use scp to get the keys for the server/clients
+Use scp to login to the other switch(es) and download the public keys from there.
 
-For the Spine switch:
-Assuming the ips of the leaf switches are 192.168.122.47 and 192.168.122.105
+For the spine switch:
+Assuming the IPs of the leaf switches are 10.0.100.2 and 10.0.100.3
 
 ```
 scp admin@10.0.100.2:/home/admin/keys/rosenpass-client-public/* /home/admin/keys/rosenpass-client1-public
 scp admin@10.0.100.3:/home/admin/keys/rosenpass-client-public/* /home/admin/keys/rosenpass-client2-public
 ```
 
-For Leaf switch 1 and 2:
+For Leaf 1 and 2:
 Assuming that the IP of the spine is 10.0.100.1
 ```scp admin@10.0.100.1:/home/admin/keys/rosenpass-server-public/* /home/admin/keys/rosenpass-server-public```
 
 This will exchange the public keys of the switches and mount them directly into the rosenpass container for further usage.
 
 #### 4.4 Execute the scripts as mentioned above
-Execute the startup scripts for the client and the server like mentioned above [start the server](#13-start-the-server-script) [start the client](#14-start-the-client-scripts)
+Execute the startup scripts for the clients and the server like mentioned above [start the server](#13-start-the-server-script) [start the client](#14-start-the-client-scripts)
 
 Please note however, that there are several differences regarding the allowed IPs:
-On the spine (VPN Server) you will assign for each leaf switch 2 allowed IPs. One for the VPN connection and one for routing the VLAN connection to the children of the Leaf. For instance, for Leaf one,the config you will need to enter during the scripted setup is:
+On the spine (VPN Server) you will assign for each leaf switch 2 allowed IPs. One for the VPN connection and one for routing the VLAN connection to the children of the leaf. For instance, in the container of the spine, to add Leaf 1 as a peer, the config you will need to enter during the scripted setup is:
 
 ```
 key location: /keys/rosenpass-client1-public
@@ -416,7 +418,7 @@ key location: /keys/rosenpass-server-public
 allowed IPs: 10.11.12.0/24,10.0.200.0/24
 ```
 
-This will ensure, that the necessary traffic will be routed over the VPN
+This will ensure, that the necessary traffic can be routed over the VPN
 
 #### 4.7 Add routing for the VLAN over VPN 
 
@@ -435,11 +437,11 @@ on **Leaf2** run:
 sudo ip route add 10.0.200.0/24 via 10.11.12.101
 ```
 
-#### 4.8 test ping from client 1 to client 2
+#### 4.8 Test ping from client 1 to client 2
 
 To test the connection, run from kali 1:
 ```ping 10.0.250.2```
-The ping should work fine. However, if the onnection did not work, there might be an issue during the conduction of the setup or the rosenpass clients could not yet establish the connection to the server. This is crucial, as the server at the beginning does not know where the clients are and needs to wait for them to authenticate to it. To circumvent that, run a simple ping from each leaf node to the spine:
+The ping should work fine. However, if the connection did not work, there might be an issue during the conduction of the setup or the rosenpass clients could not yet establish the connection to the server. This is crucial, as the server at the beginning does not know where the clients are and needs to wait for them to authenticate to it. To circumvent that, run a simple ping from each leaf node to the spine:
 ```
 ping 10.11.12.100
 ```
