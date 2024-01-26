@@ -228,35 +228,37 @@ It is also possible to start the images in 3 different modes, without using the 
 
 To setup a minimal example on gns3, it is recommended to use 3 sonic switches. One will connect the other 2 leaf switches. Each leaf switch will then include a virtual client. This will allow us to communicate from one client with another one via leaf and spine switches, by using a rosenpass VPN to secure the communication. Please note that the clients will not be part of the VPN, only the switches. The topology is displayed below:
 
-<!-- Bild von GNS3 topology -->
+![Architecture in GNS3](/images/Architecture.png)
 
 For this topology we assume the following: 
-- The 2 end nodes need to be in the same VLAN in order to be able to reach one another
-- DHCP for the VLAN will be configured manually to assign IP addresses to all switches and the 2 end nodes
+- Each switch is in a management VLAN called VLAN 100
+- Each Leaf ahs its own VLAN to connect its clients (VLAN 200 and VLAN 250)
+- DHCP for the VLANs will be configured in the switches responsible
 - The following configuration will be applied:
 
-| Configuration                                    | Value                                                 |
-|------------------------------------------------|----------------------------------------------------------------------|
-|Spine IP | 172.31.100.100  |
-|Leaf 1 IP| 172.31.100.101 |
-|Leaf 2 IP| 172.31.100.102 |
-|Client 1 IP| 172.31.100.103 |
-|Client 2 IP| 172.31.100.104 |
-|Spine VPN IP | 10.11.12.100 |
-|Leaf 1 VPN IP| 10.11.12.101 |
-|Leaf 2 VPN IP| 10.11.12.102 |
+  | Configuration                                    | Value                                                 |
+  |------------------------------------------------|----------------------------------------------------------------------|
+  |Spine VLan 100 IP | 10.0.100.1   |
+  |Spine VPN IP | 10.11.12.100 |
+  |Leaf 1 VPN IP| 10.11.12.101 |
+  |Leaf 1 VLAN 100| 10.0.100.2 |
+  |Leaf 1 VLAN 200| 10.0.200.1 |
+  |Leaf 2 VPN IP| 10.11.12.102 |
+  |Leaf 2 VLAN 100| 10.0.100.3 |
+  |Leaf 2 VLAN 250| 10.0.250.1 |
+  |Client 1 IP| 10.0.200.2 |
+  |Client 2 IP| 10.0.250.2 |
 
 
 #### 4.1 Setup Gns3 and configure dhcp
 
-First you will need to replicate the architecture. Make sure to connect the internet sources on the eth0 ports, for instance for a leaf switch, eth0 should point to an arbitrary port of the main switch. The main switch should be connected on port eth0 to the hub and the hub on eth0 to the NAT. 
+First you will need to replicate the architecture. Make sure to connect the internet sources on the eth0 ports, so for a each switch, eth0 should point to an arbitrary port of the hub that is connected to the GNS3 NAT.
 
-Now, in order to allow the virtual machines to communicate with each other, it is necessary to configure a dhcp service, as the sonic switches only come with a dhcp relay.  Execute the following steps on the main **spine switch**:
-
-First open the sonic cli via ```sonic-cli```
-then execute the following:
+##### 4.1.1 Create Management VLAN 100
+Now, in order to allow the virtual machines to communicate with each other, it is necessary to configure a dhcp service, as the sonic switches only come with a dhcp relay.  Execute the following steps on the main **spine switch** to setup the neccessary VLAN for the Management connection:
 
 ```
+sonic-cli
 configure t
 interface Vlan 100
 no shutdown
@@ -271,55 +273,78 @@ interface Ethernet 1
 no shutdown
 switchport access Vlan 100
 ```
-Assuming that the leaf spines are connected on the ports 1/1 and 1/2 on the spine, this will setup the vlan in the spine and attach the respective ports to this.
+Assuming that the leaf spines are connected on the ports 1/1 and 1/2 on the spine, as depicted above, this will setup the VLAN in the spine and attach the respective ports to this. This VLAN is used as management connection.
+
+##### does not work correctly at the moment
 At last, save the dhcpd.conf file which can be found [here](dhcp/dhcpd.conf) to /home/admin/data/dhcpd.conf
 Then you can execute
     ```sudo tpcm install name dhcp pull networkboot/dhcpd --args "--network host -v /home/admin/data/:/data"```
 to start the dhcp container in order to assign the vlan ips automatically to all clients. Using tpcm, this container will restart on switch restarts as well.
 
+##### workaround
+go to the leaf swtiches and execute the following (depending on the leaf x = 2 or 3):
+
+```
+sonic-cli
+configure t
+interface Ethernet0
+no sh
+ip addr 10.0.100.x/24
+```
+
+##### 4.1.2 setup VLANs on the leafs
 Now on the **Leaf switches** run the following (Assuming the spine is connected to the Leaf on the leafs port 1/1 and the kali linux (client of the leaf) is connect to port 1/2 )
+**Leaf1:**
 ```        
 sonic-cli
 configure t
-interface Vlan 100
+ip address 10.0.200.1/24
 no shutdown
-exit
-interface Ethernet0 
-no shutdown
-switchport access Vlan 100
 exit
 interface Ethernet1
-switchport access Vlan 100
 no shutdown
+switchport access Vlan 200
+```
+
+**Leaf2:**
+```        
+sonic-cli
+configure t
+ip address 10.0.250.1/24
+no shutdown
+exit
+interface Ethernet1
+no shutdown
+switchport access Vlan 250
 ```
 
 This will also create the VLAN on the leaf and assign the ports to attach to it. 
-When you now start the Kali linux instance (which should be connected on eth0 to the leaf switch) then you will notice that it gets an ipv4 address assigned.
 
 
-<!-- 
 
-- Idee: leaf switches sind VLAn mäßig egal
-  - erstellen von VPN, aber allowed IPs bekommt auch die VLAN Range 
-  - Dann sollte über VPN bis SPINE alles laufen
-    - Frage: läuft auch verbindung Spine -> Leaf über VPN ? Test!  
-    - 
-    - 
-  
-  stand jetzt haben wir 2 system:
-  1. den vpn 
-  2. das VLAN 
-     1. von kali 2 kali wird über die siwtches im vlan interface gerouted. 
-     2. aber über rosenpass interface ist auch vlan routbar -> was wenn wir überall einfach in den switches routen packen ?
-  -->
+##### 4.1.3 sstart dhcp on the leafs
 
-#### 4.2 start containers in the nodes 
+In order to use the created VLANs, the dhcp servers need to be setup as well. In order to do that, copy the according configurations, which can be found here for [leaf 1](./dhcp/dhcpd%20-leaf1.conf) and 
+[leaf 2](./dhcp/dhcpd%20-leaf2.conf). Copy these to the directory 
+/home/data and name them dhcpd.conf
+
+Afterwards, to start the dhcp server, run:
+```
+sudo tpcm install name dhcp pull networkboot/dhcpd --args "--network host -v /home/admin/data/:/data"
+```
+
+When you now start the Kali linux instance (which should be connected on eth0 to the leaf switch) then you will notice that it gets an IPv4 address assigned.
+
+#### 4.2 start the containers in the nodes 
 
 Start the rosenpass containers for each node accordingly.
 For the Spine switch, run:
 ```
-docker run -d --cap-add=NET_ADMIN --network host -e MODE=server -e SERVER_PUBLIC_IP="192.168.122.30" -e SERVER_PORT=9999 -e SERVER_VPN_IP="10.11.12.100/24" --privileged --name=server --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
+docker run -d --cap-add=NET_ADMIN --network host -e MODE=server -e SERVER_PUBLIC_IP="10.0.100.1" -e SERVER_PORT=9999 -e SERVER_VPN_IP="10.11.12.100/24" --privileged --name=server --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
+```
+Then we will need to change the access mode on the generated keys in the keys directory that we mounted on container start. Also we will preemptively create directories for the client keys to come:
 
+```
 sudo chmod -R 777 /home/admin/keys/rosenpass-server-public/
 sudo mkdir /home/admin/keys/rosenpass-client1-public/
 sudo mkdir /home/admin/keys/rosenpass-client2-public/
@@ -328,7 +353,7 @@ sudo chmod -R 777 /home/admin/keys/rosenpass-client2-public/ /home/admin/keys/ro
 
 For Leaf switch 1, run:
 ```
-docker run -d --cap-add=NET_ADMIN --network host -e MODE=client -e SERVER_PUBLIC_IP="192.168.122.30" -e SERVER_PORT=9999 -e CLIENT_VPN_IP="10.11.12.101/24" --privileged --name=client --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
+docker run -d --cap-add=NET_ADMIN --network host -e MODE=client -e SERVER_PUBLIC_IP="10.0.100.1" -e SERVER_PORT=9999 -e CLIENT_VPN_IP="10.11.12.101/24" --privileged --name=client --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
 
 sudo chmod -R 777 /home/admin/keys/rosenpass-client-public/
 sudo mkdir /home/admin/keys/rosenpass-server-public/
@@ -337,7 +362,7 @@ sudo chmod -R 777 /home/admin/keys/rosenpass-server-public/
 
 For Leaf switch 2, run:
 ```
-docker run -d --cap-add=NET_ADMIN --network host -e MODE=client -e SERVER_PUBLIC_IP="192.168.122.30" -e SERVER_PORT=9999 -e CLIENT_VPN_IP="10.11.12.102/24" --privileged --name=client --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
+docker run -d --cap-add=NET_ADMIN --network host -e MODE=client -e SERVER_PUBLIC_IP="10.0.100.1" -e SERVER_PORT=9999 -e CLIENT_VPN_IP="10.11.12.102/24" --privileged --name=client --restart always -v /home/admin/keys:/keys stefan96/rosenpass:v0.2.1-SNAPSHOT
 
 sudo chmod -R 777 /home/admin/keys/rosenpass-client-public/
 sudo mkdir /home/admin/keys/rosenpass-server-public/
@@ -354,28 +379,75 @@ For the Spine switch:
 Assuming the ips of the leaf switches are 192.168.122.47 and 192.168.122.105
 
 ```
-scp admin@192.168.122.47:/home/admin/keys/rosenpass-client-public/* /home/admin/keys/rosenpass-client1-public
-scp admin@192.168.122.105:/home/admin/keys/rosenpass-client-public/* /home/admin/keys/rosenpass-client2-public
+scp admin@10.0.100.2:/home/admin/keys/rosenpass-client-public/* /home/admin/keys/rosenpass-client1-public
+scp admin@10.0.100.3:/home/admin/keys/rosenpass-client-public/* /home/admin/keys/rosenpass-client2-public
 ```
 
 For Leaf switch 1 and 2:
-Assuming that the IP of the spine is 192.168.122.30
-```scp admin@192.168.122.30:/home/admin/keys/rosenpass-server-public/* /home/admin/keys/rosenpass-server-public```
+Assuming that the IP of the spine is 10.0.100.1
+```scp admin@10.0.100.1:/home/admin/keys/rosenpass-server-public/* /home/admin/keys/rosenpass-server-public```
 
 This will exchange the public keys of the switches and mount them directly into the rosenpass container for further usage.
 
 #### 4.4 Execute the scripts as mentioned above
 Execute the startup scripts for the client and the server like mentioned above [start the server](#13-start-the-server-script) [start the client](#14-start-the-client-scripts)
-The only difference here is, that you will need to alter the allowed IPs for the leaqf switches. Since we want to route the traffic of the Kali linux instances over the VPN, we need to also include the VLAN ip range (10.0.100.0/24) in the allowed IP section for the leaf switches.
-If no error is displayed then the connection was established and can be tested by pinging the VPN IPs of the other switches. This should work from inside the rosenpass containers as well as outside on the host systems. 
 
-After executing these steps you are set to reach the switches from each other using their VPN IPs
+Please note however, that there are several differences regarding the allowed IPs:
+On the spine (VPN Server) you will assign for each leaf switch 2 allowed IPs. One for the VPN connection and one for routing the VLAN connection to the children of the Leaf. For instance, for Leaf one,the config you will need to enter during the scripted setup is:
+
+```
+key location: /keys/rosenpass-client1-public
+allowed IPs: 10.11.12.101/32,10.0.200.0/24
+```
+For the second leaf respectively:
+```
+key location: /keys/rosenpass-client1-public
+allowed IPs: 10.11.12.102/32,10.0.250.0/24
+```
+
+On the leaf switches, you will also need to setup the connection a bit differently. Here the allowed IP section will be composed of the VPN IP range and the VLAN IP range of the VLAN of the other switch. So for Leaf 1, enter:
+```
+key location: /keys/rosenpass-server-public
+allowed IPs: 10.11.12.0/24,10.0.250.0/24
+```
+for Leaf 2, enter:
+```
+key location: /keys/rosenpass-server-public
+allowed IPs: 10.11.12.0/24,10.0.200.0/24
+```
+
+This will ensure, that the necessary traffic will be routed over the VPN
 
 #### 4.7 Add routing for the VLAN over VPN 
-**TBD**
+
+At last,the nodes themselves need to be able to route the traffic between each other. Therefore, on the **Spine**, execute:
+
+```
+sudo ip route add 10.0.250.0/24 via 10.11.12.102
+sudo ip route add 10.0.200.0/24 via 10.11.12.101
+```
+on **Leaf1** run:
+```
+sudo ip route add 10.0.250.0/24 via 10.11.12.102
+```
+on **Leaf2** run:
+```
+sudo ip route add 10.0.200.0/24 via 10.11.12.101
+```
 
 #### 4.8 test ping from client 1 to client 2
-**TBD**
+
+To test the connection, run from kali 1:
+```ping 10.0.250.2```
+The ping should work fine. However, if the onnection did not work, there might be an issue during the conduction of the setup or the rosenpass clients could not yet establish the connection to the server. This is crucial, as the server at the beginning does not know where the clients are and needs to wait for them to authenticate to it. To circumvent that, run a simple ping from each leaf node to the spine:
+```
+ping 10.11.12.100
+```
+If successful, this authenticates the clients with the server
+
+To verify that the traffic is routed over the VPN, log into the spine and execute:
+```docker exec -it server watch -n 2 'wg show rosenpass0'```
+You should see a small increase in the traffic section on each ping 
 
 ## 5. Tools used 
 The following section describes the Tools that were used to build, bundle and test the image, as well as tools which supported the development process.
@@ -428,7 +500,7 @@ In order to prevent errors and enable users to quickly test out the images, smal
 #### 5.3.1 Pytest
 
 As testing framework, Pytest was used, because Python offers a small and lightweight solution for creating tests with docker containers. 
-At the moment the tests directory contains 2 test scenarios that are checked each time in the CI Pipeline (on PR and on Release). These Tests covere the following topics:
+At the moment the tests directory contains 2 test scenarios that are checked each time in the CI Pipeline (on PR and on Release). These Tests cover the following topics:
 - Setting up a client and a server container, using IPv4 and running a connection Test
 - Setting up a client and a server container, using IPv6 and running a connection Test
 
@@ -441,33 +513,18 @@ On top of these, more complex and exhaustive testing can be implemented.
 
 ### Next-steps / Issues
 **Next steps:**
-1. create rosenpass containers with network setting set to host on the switches (checked)
-2. observe if routes will be created on the host machine as well (checked)
-3. test connection between switches via VPN (checked)
-4. Find a way to route the traffic over the VPN for the VLAN of the clients (PoC in progress)
-   1. presumably in the leaf spines add default route to route all traffic via the VPN to the Spine, then it should be handled further correctly i assume
-   2. default route and other routes did not work... 
-   3. find another way ? or setup wrong ?
-5. Create VLAN and DHCP in the spine/leafs (check)
-   1. create dhcp server in container (check)
-   2. create vlan in spine (check)
-      1. make ports to switchport (check) 
-   3. leaf switch: (check)
-      1. make ports to switchport 
-      2. create VLAN
-      3. assigne keine IP ? 
-   4. connect to kali on eth0 (check)
+- fix DHCP issue
+- Present current progress
+- add to documentation the behaviour on shutdowns + recommendation to use a volume
 
 **Current Issues:**
-
+DHCP server on spine does not assign IP to leafs
 **Roadmap:**
-  - gns3 setup dhcp 
-  - e2e test
   - refresh information in dockerhub readme
   - if time remains:
     - Allow for bringing own keys for client/server
       - use volume to copy files to or from container 
       - if container on startup notices keys there -> then dont create
     - hardware switch usage 
-    - container shutdown handling --> how to reconnect to the same VPN without additional config ? --> after shutdopwn the container seem to restablish the routes/interfaces etc. so the conection flow is possible again ootb!
+    - container shutdown handling --> how to reconnect to the same VPN without additional config ? --> after shutdopwn the container seem to restablish the routes/interfaces etc. so the conection flow is possible again ootb! --> in documentation with that 
     - REST service for kex
