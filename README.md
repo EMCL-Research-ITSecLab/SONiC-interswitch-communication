@@ -301,6 +301,7 @@ Now on the **leaf switches** run the following (Assuming the spine is connected 
 ```        
 sonic-cli
 configure t
+interface vlan 200
 ip address 10.0.200.1/24
 no shutdown
 exit
@@ -313,6 +314,7 @@ switchport access Vlan 200
 ```        
 sonic-cli
 configure t
+interface vlan 250
 ip address 10.0.250.1/24
 no shutdown
 exit
@@ -407,12 +409,12 @@ key location: /keys/rosenpass-client1-public
 allowed IPs: 10.11.12.102/32,10.0.250.0/24
 ```
 
-On the leaf switches, you will also need to setup the connection a bit differently. Here the allowed IP section will be composed of the VPN IP range and the VLAN IP range of the VLAN of the other switch. So for Leaf 1, enter:
+On the leaf switches, you will also need to setup the connection a bit differently. Here the allowed IP section will be composed of the VPN IP range and the VLAN IP range of the VLAN of the other switch. So for **Leaf 1**, enter:
 ```
 key location: /keys/rosenpass-server-public
 allowed IPs: 10.11.12.0/24,10.0.250.0/24
 ```
-for Leaf 2, enter:
+for **Leaf 2**, enter:
 ```
 key location: /keys/rosenpass-server-public
 allowed IPs: 10.11.12.0/24,10.0.200.0/24
@@ -521,6 +523,7 @@ On top of these, more complex and exhaustive testing can be implemented.
 
 **Current Issues:**
 DHCP server on spine does not assign IP to leafs
+add test ping to the client scripts so that they automatically register themselves at the server
 **Roadmap:**
   - refresh information in dockerhub readme
   - if time remains:
