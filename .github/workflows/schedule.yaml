@@ -63,6 +63,8 @@ jobs:
                   LATEST_PUSHED_RELEASE=$(cat response.json | jq --argjson RELEASE_NR "$RELEASE_NR" -r '.results[$RELEASE_NR].name')
                   if [[ ${LATEST_PUSHED_RELEASE} == *"SNAPSHOT"* ]]; then
                     echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Is a SNAPSHOT, looking for non SNAPSHOT release ..."
+                  elif [[ ${LATEST_PUSHED_RELEASE} == *"latest"* ]]; then
+                    echo "Found Latest release ${LATEST_PUSHED_RELEASE}. But has the tag latest and no version number. Looking for a release with number ..."
                   else
                     echo "Found Latest release ${LATEST_PUSHED_RELEASE}. Continuing ..."
                     break
