@@ -405,7 +405,7 @@ allowed IPs: 10.11.12.101/32,10.0.200.0/24
 ```
 For the second leaf respectively:
 ```
-key location: /keys/rosenpass-client1-public
+key location: /keys/rosenpass-client2-public
 allowed IPs: 10.11.12.102/32,10.0.250.0/24
 ```
 
@@ -453,10 +453,67 @@ To verify that the traffic is routed over the VPN, log into the spine and execut
 ```docker exec -it server watch -n 2 'wg show rosenpass0'```
 You should see a small increase in the traffic section on each ping 
 
-## 5. Tools used 
+
+
+
+
+## 5. Connecting clients with stateful rules instead of vlans
+In order to setup a connection without the need of the management VLAN, one could pursue one of the following ways:
+
+1. Use Vlans in the leafs and spine to have the kali instances receive IPs to ping each other. Then use ip routes to route the traffic between the sonic devices, e.g. ip route add 10.0.200.0/24 dev Ethernet1 in combination with iptables Rule of the nat table to masquerade the traffic so that the source IP is adapted on each hop
+
+2. Use no VLAN at all and bridge the ethernet interfaces on each switch together (e.g. Ethernet 1/1 and Ethernet 1/2 in one bridge of the Leaf Switch 1) so that the traffic is directly forwarded to the next switch. However, this for one won't work with the VPN setup and second would essentially downgrade the router to a regular switch.
+
+3. Use of a firewall of any sort to alter/accept the packages by stateful rules. This approach however, cannot be used to redirect the traffic along the interfaces of the routers since they have no capability in changing the outgoing layer2 interface as they operate on layer 3
+
+
+Since the other 2 approaches are not as recommendable, the following describes the setup for approach Number 1
+
+**Leaf 1**
+```
+iptables -t nat -A POSTROUTING -o Ethernet0 -j MASQUERADE
+iptables -A FORWARD -i Ethernet1 -o Ethernet0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i Ethernet1 -o Ethernet0 -j ACCEPT
+
+ip route add 10.0.250.0/24 dev Ethernet0
+```
+
+**Leaf 2**
+```
+iptables -t nat -A POSTROUTING -o Ethernet0 -j MASQUERADE
+iptables -A FORWARD -i Ethernet1 -o Ethernet0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i Ethernet1 -o Ethernet0 -j ACCEPT
+
+ip route add 10.0.200.0/24 dev Ethernet0
+
+```
+**Spine**
+```
+iptables -t nat -A POSTROUTING -o Ethernet0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -o Ethernet1 -j MASQUERADE
+
+iptables -A FORWARD -i Ethernet1 -o Ethernet0 -j ACCEPT
+iptables -A FORWARD -i Ethernet0 -o Ethernet1 -j ACCEPT
+
+iptables -A FORWARD -i Ethernet1 -o Ethernet0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i Ethernet0 -o Ethernet1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+ip route add 10.0.250.0/24 dev Ethernet1
+ip route add 10.0.200.0/24 dev Ethernet0
+
+```
+
+## 6. Load tests
+
+In order to further evaluate the functionality of the solution, load tests were conducted in order to visualize the data flow. The therefor used scripts are located [here](./load_tests/). The results are depicted below:
+![Visualization of the load distribution](./load_tests/load.png)
+As you can see once the load generator started from kali1, all other systems also faced a significant increase in CPU load. This is to be expected and shows that the traffic flew along all the nodes. Via tcpdump it could be seen that the traffic also flew along the correct interfaces once again.
+
+
+## 7. Tools used 
 The following section describes the Tools that were used to build, bundle and test the image, as well as tools which supported the development process.
 
-###  5.1 Nix 
+###  7.1 Nix 
 The package management tool Nix is used to build rosenpass from source and to inject it into a minimal docker container
 
 The following packages are included by using Nix: 
@@ -475,20 +532,20 @@ The following packages are included by using Nix:
 | `pkgs.tcpdump`                                      | tcpdump utility to watch network traffic | Really useful to include for debugging purposes  | False |
 
 
-#### 5.1.1 Package size
+#### 7.1.1 Package size
 Since it is not possible to retrieve the package sizes from an official source, it was tested, what size a minimum image will have.
 By tests, a plain Nix image will have roughly 1 MB of Space occupied. To have only the rosenpass tool included (which is not functional on its own), 67MB of space are required. All packages that are strictly required for rosenpass to work, consume 94MB of space (Wireguard is not included). When including Wireguard as well, the image takes up to 132MB. The image with all the packages listed above, needs 132MB as well. 
 These results were obtained by using each combination of packages as mentioned above with a plain image and observing the size properties of the results in the nix path. via ``` nix path-info -Sh ./result ``` 
 
 
 
-#### 5.1.2 Flake
+#### 7.1.2 Flake
 Since rosenpass is relying on the experimental functionality of "flakes", this project also harnesses its capabilities. Flake allows even more reproducibility than normal Nix. 
 
-### 5.2 Docker
+### 7.2 Docker
 As container runtime environment, docker is used as the defacto standard solution. With these, the resulting image can easily be integrate into the SONic switches, which are already using Docker for their functionalities. 
 
-#### 5.2.2 Docker configuration
+#### 7.2.2 Docker configuration
 
 In order to be able to setup rosenpass correctly in docker containers, a few things need to be considered:
 - In order to prevent permission and RETNETLINK errors, the container needs:
@@ -498,10 +555,10 @@ In order to be able to setup rosenpass correctly in docker containers, a few thi
   - sysctl options enabled to allow ipv6
 
 
-### 5.3 Testing Frameworks
+### 7.3 Testing Frameworks
 In order to prevent errors and enable users to quickly test out the images, small tests are created to ensure that. 
 
-#### 5.3.1 Pytest
+#### 7.3.1 Pytest
 
 As testing framework, Pytest was used, because Python offers a small and lightweight solution for creating tests with docker containers. 
 At the moment the tests directory contains 2 test scenarios that are checked each time in the CI Pipeline (on PR and on Release). These Tests cover the following topics:
@@ -511,25 +568,5 @@ At the moment the tests directory contains 2 test scenarios that are checked eac
 On top of these, more complex and exhaustive testing can be implemented.
 
 
-#### 5.3.2 Act
+#### 7.3.2 Act
 [Act](https://github.com/nektos/act) is a CLI tools to test out github action workflows locally in docker containers, without them running on the remote github actions runner and thus causing spam for everyone subscribed to the Repository.  
-
-
-### Next-steps / Issues
-**Next steps:**
-- fix DHCP issue
-- Present current progress
-- add to documentation the behaviour on shutdowns + recommendation to use a volume
-
-**Current Issues:**
-DHCP server on spine does not assign IP to leafs
-add test ping to the client scripts so that they automatically register themselves at the server
-**Roadmap:**
-  - refresh information in dockerhub readme
-  - if time remains:
-    - Allow for bringing own keys for client/server
-      - use volume to copy files to or from container 
-      - if container on startup notices keys there -> then dont create
-    - hardware switch usage 
-    - container shutdown handling --> how to reconnect to the same VPN without additional config ? --> after shutdopwn the container seem to restablish the routes/interfaces etc. so the conection flow is possible again ootb! --> in documentation with that 
-    - REST service for kex
